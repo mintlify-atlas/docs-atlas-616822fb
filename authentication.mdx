@@ -1,0 +1,347 @@
+---
+title: Authentication
+description: Learn how to authenticate with the BlindPay API using API keys
+---
+
+# Authentication
+
+The BlindPay Node.js SDK uses API key authentication. Every request to the BlindPay API requires both an API key and an Instance ID.
+
+## Getting Your Credentials
+
+<Steps>
+  <Step title="Create a BlindPay account">
+    If you don't have an account yet, sign up at [app.blindpay.com](https://app.blindpay.com).
+  </Step>
+
+  <Step title="Create or select an instance">
+    An instance represents your integration environment (e.g., production, staging). Each instance has its own API keys and configuration.
+    
+    Navigate to your dashboard and create a new instance or select an existing one.
+  </Step>
+
+  <Step title="Generate an API key">
+    1. Go to your instance dashboard
+    2. Navigate to **Settings** → **API Keys**
+    3. Click **Create API Key**
+    4. Copy your API key immediately - you won't be able to see it again
+    5. Note your Instance ID (displayed at the top of the page)
+
+    <Warning>
+      Store your API key securely. It provides full access to your BlindPay instance and should be treated like a password.
+    </Warning>
+  </Step>
+</Steps>
+
+## Initializing the Client
+
+Once you have your credentials, initialize the BlindPay client:
+
+```typescript
+import { BlindPay } from '@blindpay/node';
+
+const blindpay = new BlindPay({
+  apiKey: 'your-api-key-here',
+  instanceId: 'your-instance-id-here'
+});
+```
+
+### Constructor Parameters
+
+The `BlindPay` constructor accepts an object with the following required parameters:
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `apiKey` | `string` | Your BlindPay API key |
+| `instanceId` | `string` | Your instance identifier |
+
+<Note>
+  Both parameters are required. The SDK will throw a `BlindPayError` if either is missing.
+</Note>
+
+## Secure Credential Storage
+
+Never hardcode your API credentials in your source code. Use environment variables instead.
+
+### Using Environment Variables
+
+Create a `.env` file in your project root:
+
+```bash .env
+BLINDPAY_API_KEY=bp_live_abc123...
+BLINDPAY_INSTANCE_ID=inst_xyz789...
+```
+
+Then reference them in your code:
+
+```typescript
+import { BlindPay } from '@blindpay/node';
+
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY!,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID!
+});
+```
+
+### Environment Variable Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Add to .gitignore" icon="eye-slash">
+    Never commit `.env` files to version control:
+    
+    ```bash .gitignore
+    .env
+    .env.local
+    .env.*.local
+    ```
+  </Card>
+  
+  <Card title="Use different keys per environment" icon="layer-group">
+    Maintain separate API keys for development, staging, and production environments.
+  </Card>
+  
+  <Card title="Rotate keys regularly" icon="arrows-rotate">
+    Periodically rotate your API keys and revoke old ones to maintain security.
+  </Card>
+  
+  <Card title="Use secret management" icon="vault">
+    For production, use a secret management service like AWS Secrets Manager, HashiCorp Vault, or your platform's secret store.
+  </Card>
+</CardGroup>
+
+## Managing API Keys
+
+You can manage your API keys programmatically using the SDK:
+
+### List API Keys
+
+Retrieve all API keys for your instance:
+
+```typescript
+const { data, error } = await blindpay.instances.apiKeys.list();
+
+if (error) {
+  console.error('Failed to list API keys:', error.message);
+  return;
+}
+
+console.log('API Keys:');
+data.forEach(key => {
+  console.log(`- ${key.name} (created: ${key.created_at})`);
+});
+```
+
+### Create New API Key
+
+Generate a new API key programmatically:
+
+```typescript
+const { data, error } = await blindpay.instances.apiKeys.create({
+  name: 'Production API Key'
+});
+
+if (error) {
+  console.error('Failed to create API key:', error.message);
+  return;
+}
+
+console.log('New API Key created:');
+console.log('Key:', data.key);
+console.log('ID:', data.id);
+```
+
+<Warning>
+  The API key value is only returned once when created. Store it securely immediately.
+</Warning>
+
+### Delete API Key
+
+Revoke an API key when it's no longer needed:
+
+```typescript
+const { error } = await blindpay.instances.apiKeys.delete('key_id_here');
+
+if (error) {
+  console.error('Failed to delete API key:', error.message);
+  return;
+}
+
+console.log('API key successfully revoked');
+```
+
+<Tip>
+  Before deleting an API key, ensure it's not being used by any active applications or services.
+</Tip>
+
+## Authentication Headers
+
+When you make requests through the SDK, the following headers are automatically included:
+
+| Header | Value | Description |
+|--------|-------|-------------|
+| `Authorization` | `Bearer {apiKey}` | Your API key for authentication |
+| `Content-Type` | `application/json` | Request payload format |
+| `Accept` | `application/json` | Expected response format |
+| `User-Agent` | `blindpay-node/{version}` | SDK identifier and version |
+
+You don't need to set these manually - the SDK handles them automatically.
+
+## Error Handling
+
+The SDK provides clear error messages for authentication failures:
+
+```typescript
+try {
+  const blindpay = new BlindPay({
+    apiKey: '',  // Invalid: empty string
+    instanceId: 'inst_123'
+  });
+} catch (error) {
+  // Throws: BlindPayError: "Api key not provided, get your api key on blindpay dashboard"
+  console.error(error.message);
+}
+```
+
+```typescript
+try {
+  const blindpay = new BlindPay({
+    apiKey: 'bp_test_key',
+    instanceId: ''  // Invalid: empty string
+  });
+} catch (error) {
+  // Throws: BlindPayError: "Instance id not provided, get your instance id on blindpay dashboard"
+  console.error(error.message);
+}
+```
+
+### Invalid Credentials Response
+
+When making API calls with invalid credentials, you'll receive an error response:
+
+```typescript
+const { data, error } = await blindpay.available.getRails();
+
+if (error) {
+  // error.message will contain details like:
+  // - "Unauthorized" (invalid API key)
+  // - "Instance not found" (invalid instance ID)
+  console.error('Authentication failed:', error.message);
+}
+```
+
+## Security Best Practices
+
+<Steps>
+  <Step title="Use environment-specific keys">
+    Create separate API keys for development, staging, and production environments. Never use production keys in development.
+  </Step>
+
+  <Step title="Implement key rotation">
+    Regularly rotate your API keys (e.g., every 90 days). Create a new key, update your applications, then revoke the old key.
+  </Step>
+
+  <Step title="Monitor API key usage">
+    Use the BlindPay dashboard to monitor API calls and detect any unusual activity.
+  </Step>
+
+  <Step title="Restrict key permissions">
+    When the feature becomes available, use API keys with minimum required permissions for each application.
+  </Step>
+
+  <Step title="Secure your deployment environment">
+    Ensure your production servers and deployment pipelines securely handle environment variables and secrets.
+  </Step>
+</Steps>
+
+## Webhook Signature Verification
+
+For webhook endpoints, verify the signature to ensure requests are from BlindPay:
+
+```typescript
+import { BlindPay } from '@blindpay/node';
+import express from 'express';
+
+const app = express();
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY!,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID!
+});
+
+app.post('/webhooks/blindpay', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['svix-signature'] as string;
+  const id = req.headers['svix-id'] as string;
+  const timestamp = req.headers['svix-timestamp'] as string;
+  const payload = req.body.toString();
+
+  const isValid = blindpay.verifyWebhookSignature({
+    secret: process.env.BLINDPAY_WEBHOOK_SECRET!,
+    headers: {
+      id,
+      timestamp,
+      signature
+    },
+    payload
+  });
+
+  if (!isValid) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+
+  // Process the webhook
+  const event = JSON.parse(payload);
+  console.log('Webhook event:', event.type);
+  
+  res.json({ received: true });
+});
+```
+
+<Note>
+  The webhook secret is different from your API key. Get it from the webhook endpoint configuration in your BlindPay dashboard.
+</Note>
+
+## Testing Authentication
+
+Verify your authentication is working correctly:
+
+```typescript test-auth.ts
+import { BlindPay } from '@blindpay/node';
+
+async function testAuthentication() {
+  const blindpay = new BlindPay({
+    apiKey: process.env.BLINDPAY_API_KEY!,
+    instanceId: process.env.BLINDPAY_INSTANCE_ID!
+  });
+
+  console.log('Testing authentication...');
+
+  const { data, error } = await blindpay.instances.get();
+
+  if (error) {
+    console.error('❌ Authentication failed:', error.message);
+    process.exit(1);
+  }
+
+  console.log('✅ Authentication successful!');
+  console.log('Instance name:', data.name);
+  console.log('Instance ID:', data.id);
+}
+
+testAuthentication();
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Make your first API call with authenticated client
+  </Card>
+  <Card title="Receivers" icon="users" href="/guides/receivers">
+    Learn how to create and manage payment receivers
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/guides/webhook-verification">
+    Set up webhook endpoints for event notifications
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/client">
+    Explore the complete API documentation
+  </Card>
+</CardGroup>

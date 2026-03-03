@@ -1,0 +1,333 @@
+---
+title: 'Partner Fees'
+description: 'Manage partner fee configurations for payins and payouts'
+---
+
+## List Partner Fees
+
+Retrieve a list of all partner fee configurations for your instance.
+
+```typescript
+const response = await blindpay.partnerFees.list();
+```
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of partner fee objects
+  
+  <Expandable title="Partner Fee object">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the partner fee configuration
+    </ResponseField>
+    
+    <ResponseField name="instance_id" type="string" required>
+      ID of the instance this fee configuration belongs to
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Descriptive name for this fee configuration
+    </ResponseField>
+    
+    <ResponseField name="payout_percentage_fee" type="number" required>
+      Percentage fee applied to payouts (e.g., 0.5 for 0.5%)
+    </ResponseField>
+    
+    <ResponseField name="payout_flat_fee" type="number" required>
+      Flat fee amount applied to payouts in USD
+    </ResponseField>
+    
+    <ResponseField name="payin_percentage_fee" type="number" required>
+      Percentage fee applied to payins (e.g., 0.5 for 0.5%)
+    </ResponseField>
+    
+    <ResponseField name="payin_flat_fee" type="number" required>
+      Flat fee amount applied to payins in USD
+    </ResponseField>
+    
+    <ResponseField name="evm_wallet_address" type="string" required>
+      EVM-compatible wallet address where fees are sent
+    </ResponseField>
+    
+    <ResponseField name="stellar_wallet_address" type="string" required>
+      Stellar wallet address where fees are sent
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "data": [
+    {
+      "id": "pfee_1234567890",
+      "instance_id": "inst_1234567890",
+      "name": "Standard Partner Fee",
+      "payout_percentage_fee": 0.5,
+      "payout_flat_fee": 1.0,
+      "payin_percentage_fee": 0.5,
+      "payin_flat_fee": 1.0,
+      "evm_wallet_address": "0x1234567890abcdef1234567890abcdef12345678",
+      "stellar_wallet_address": "GABC123456789DEFGHIJKLMNOPQRSTUVWXYZ"
+    }
+  ],
+  "error": null
+}
+```
+</ResponseExample>
+
+## Create Partner Fee
+
+Create a new partner fee configuration.
+
+```typescript
+const response = await blindpay.partnerFees.create({
+  name: "Standard Partner Fee",
+  evm_wallet_address: "0x1234567890abcdef1234567890abcdef12345678",
+  payout_percentage_fee: 0.5,
+  payout_flat_fee: 1.0,
+  payin_percentage_fee: 0.5,
+  payin_flat_fee: 1.0,
+  stellar_wallet_address: "GABC123456789DEFGHIJKLMNOPQRSTUVWXYZ",
+  virtual_account_set: false
+});
+```
+
+### Parameters
+
+<ParamField path="name" type="string" required>
+  A descriptive name for this fee configuration
+</ParamField>
+
+<ParamField path="evm_wallet_address" type="string" required>
+  EVM-compatible wallet address (e.g., Ethereum, Polygon, Base) where fees will be sent
+</ParamField>
+
+<ParamField path="payout_percentage_fee" type="number" required>
+  Percentage fee to apply to payouts. For example, 0.5 represents a 0.5% fee
+</ParamField>
+
+<ParamField path="payout_flat_fee" type="number" required>
+  Flat fee amount to apply to payouts in USD. For example, 1.0 represents a $1.00 fee
+</ParamField>
+
+<ParamField path="payin_percentage_fee" type="number" required>
+  Percentage fee to apply to payins. For example, 0.5 represents a 0.5% fee
+</ParamField>
+
+<ParamField path="payin_flat_fee" type="number" required>
+  Flat fee amount to apply to payins in USD. For example, 1.0 represents a $1.00 fee
+</ParamField>
+
+<ParamField path="stellar_wallet_address" type="string">
+  Stellar wallet address where fees will be sent for Stellar network transactions
+</ParamField>
+
+<ParamField path="virtual_account_set" type="boolean">
+  Whether a virtual account is configured for this partner fee
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Created Partner Fee object">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the created partner fee configuration
+    </ResponseField>
+    
+    <ResponseField name="instance_id" type="string" required>
+      ID of the instance this fee configuration belongs to
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Descriptive name for this fee configuration
+    </ResponseField>
+    
+    <ResponseField name="payout_percentage_fee" type="number" required>
+      Percentage fee applied to payouts
+    </ResponseField>
+    
+    <ResponseField name="payout_flat_fee" type="number" required>
+      Flat fee amount applied to payouts in USD
+    </ResponseField>
+    
+    <ResponseField name="payin_percentage_fee" type="number" required>
+      Percentage fee applied to payins
+    </ResponseField>
+    
+    <ResponseField name="payin_flat_fee" type="number" required>
+      Flat fee amount applied to payins in USD
+    </ResponseField>
+    
+    <ResponseField name="evm_wallet_address" type="string">
+      EVM-compatible wallet address where fees are sent
+    </ResponseField>
+    
+    <ResponseField name="stellar_wallet_address" type="string">
+      Stellar wallet address where fees are sent
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "data": {
+    "id": "pfee_1234567890",
+    "instance_id": "inst_1234567890",
+    "name": "Standard Partner Fee",
+    "payout_percentage_fee": 0.5,
+    "payout_flat_fee": 1.0,
+    "payin_percentage_fee": 0.5,
+    "payin_flat_fee": 1.0,
+    "evm_wallet_address": "0x1234567890abcdef1234567890abcdef12345678",
+    "stellar_wallet_address": "GABC123456789DEFGHIJKLMNOPQRSTUVWXYZ"
+  },
+  "error": null
+}
+```
+</ResponseExample>
+
+## Get Partner Fee
+
+Retrieve details about a specific partner fee configuration.
+
+```typescript
+const response = await blindpay.partnerFees.get("pfee_1234567890");
+```
+
+### Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the partner fee configuration to retrieve
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Partner Fee object">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the partner fee configuration
+    </ResponseField>
+    
+    <ResponseField name="instance_id" type="string" required>
+      ID of the instance this fee configuration belongs to
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Descriptive name for this fee configuration
+    </ResponseField>
+    
+    <ResponseField name="payout_percentage_fee" type="number" required>
+      Percentage fee applied to payouts
+    </ResponseField>
+    
+    <ResponseField name="payout_flat_fee" type="number" required>
+      Flat fee amount applied to payouts in USD
+    </ResponseField>
+    
+    <ResponseField name="payin_percentage_fee" type="number" required>
+      Percentage fee applied to payins
+    </ResponseField>
+    
+    <ResponseField name="payin_flat_fee" type="number" required>
+      Flat fee amount applied to payins in USD
+    </ResponseField>
+    
+    <ResponseField name="evm_wallet_address" type="string" required>
+      EVM-compatible wallet address where fees are sent
+    </ResponseField>
+    
+    <ResponseField name="stellar_wallet_address" type="string">
+      Stellar wallet address where fees are sent
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "data": {
+    "id": "pfee_1234567890",
+    "instance_id": "inst_1234567890",
+    "name": "Standard Partner Fee",
+    "payout_percentage_fee": 0.5,
+    "payout_flat_fee": 1.0,
+    "payin_percentage_fee": 0.5,
+    "payin_flat_fee": 1.0,
+    "evm_wallet_address": "0x1234567890abcdef1234567890abcdef12345678",
+    "stellar_wallet_address": "GABC123456789DEFGHIJKLMNOPQRSTUVWXYZ"
+  },
+  "error": null
+}
+```
+</ResponseExample>
+
+## Delete Partner Fee
+
+Permanently delete a partner fee configuration.
+
+<Warning>
+Deleting a partner fee configuration cannot be undone. Existing transactions using this fee configuration will not be affected.
+</Warning>
+
+```typescript
+const response = await blindpay.partnerFees.delete("pfee_1234567890");
+```
+
+### Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the partner fee configuration to delete
+</ParamField>
+
+### Response
+
+Returns a success response with no data on successful deletion.
+
+<ResponseExample>
+```json
+{
+  "data": null,
+  "error": null
+}
+```
+</ResponseExample>
+
+## Fee Calculation
+
+Partner fees are calculated using both percentage and flat fee components:
+
+```
+Total Fee = (Transaction Amount × Percentage Fee) + Flat Fee
+```
+
+### Example
+
+For a $1,000 payout with:
+- Percentage fee: 0.5% (0.5)
+- Flat fee: $1.00
+
+```
+Total Fee = ($1,000 × 0.005) + $1.00 = $5.00 + $1.00 = $6.00
+```
+
+## Supported Networks
+
+### EVM-Compatible Networks
+
+The `evm_wallet_address` can be used on the following networks:
+
+- Ethereum
+- Polygon
+- Base
+- Arbitrum
+- And other EVM-compatible chains
+
+### Stellar Network
+
+The `stellar_wallet_address` is used for transactions on the Stellar network.
+
+<Tip>
+Make sure to provide wallet addresses for all networks you plan to use. Fees will be sent to the appropriate address based on the network used for the transaction.
+</Tip>

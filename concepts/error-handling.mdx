@@ -1,0 +1,505 @@
+---
+title: Error Handling
+description: Understanding BlindPay's error response pattern and how to handle errors effectively
+---
+
+## Error Response Pattern
+
+BlindPay SDK uses a discriminated union pattern for all API responses. Every SDK method returns a `BlindpayApiResponse<T>` type that can be either a success or an error:
+
+```typescript
+type BlindpayApiResponse<T> = BlindpaySuccessResponse<T> | BlindpayErrorResponse;
+
+type BlindpaySuccessResponse<T> = {
+  data: T;
+  error: null;
+};
+
+type BlindpayErrorResponse = {
+  data: null;
+  error: {
+    message: string;
+  };
+};
+```
+
+This pattern provides several benefits:
+- Type-safe error handling with TypeScript
+- No thrown exceptions to catch
+- Explicit success/error checking at each call site
+- Consistent pattern across all SDK methods
+
+## Basic Error Handling
+
+Every SDK method call should check for errors before using the data:
+
+```typescript
+const { data, error } = await blindpay.receivers.get("re_abc123");
+
+if (error) {
+  console.error("Failed to get receiver:", error.message);
+  // Handle the error appropriately
+  return;
+}
+
+// TypeScript knows data is not null here
+console.log("Receiver:", data.first_name, data.last_name);
+```
+
+## TypeScript Type Narrowing
+
+The discriminated union pattern enables TypeScript to narrow types automatically:
+
+```typescript
+const response = await blindpay.receivers.createIndividualWithStandardKYC({
+  country: "US",
+  email: "user@example.com"
+});
+
+// response type: BlindpayApiResponse<CreateIndividualWithStandardKYCResponse>
+
+if (response.error) {
+  // Inside this block, TypeScript knows:
+  // - response.error is { message: string }
+  // - response.data is null
+  console.error(response.error.message);
+  return;
+}
+
+// Outside the error block, TypeScript knows:
+// - response.error is null  
+// - response.data is CreateIndividualWithStandardKYCResponse
+console.log("Created receiver:", response.data.id);
+```
+
+This eliminates the need for type assertions or optional chaining.
+
+## Error Handling Patterns
+
+### Early Return Pattern
+
+The most common pattern - check for errors and return early:
+
+```typescript
+const createPayoutFlow = async (receiverId: string, amount: number) => {
+  // Step 1: Get the receiver
+  const { data: receiver, error: receiverError } = 
+    await blindpay.receivers.get(receiverId);
+  
+  if (receiverError) {
+    console.error("Failed to get receiver:", receiverError.message);
+    return { success: false, error: receiverError.message };
+  }
+  
+  // Step 2: Get their bank accounts
+  const { data: accounts, error: accountsError } = 
+    await blindpay.receivers.bankAccounts.list(receiverId);
+  
+  if (accountsError) {
+    console.error("Failed to get bank accounts:", accountsError.message);
+    return { success: false, error: accountsError.message };
+  }
+  
+  if (accounts.data.length === 0) {
+    return { success: false, error: "No bank accounts found" };
+  }
+  
+  // Step 3: Create a quote
+  const { data: quote, error: quoteError } = await blindpay.quotes.create({
+    bank_account_id: accounts.data[0].id,
+    currency_type: "receiver",
+    request_amount: amount,
+    network: "base",
+    token: "USDC",
+    cover_fees: false
+  });
+  
+  if (quoteError) {
+    console.error("Failed to create quote:", quoteError.message);
+    return { success: false, error: quoteError.message };
+  }
+  
+  return { success: true, quote };
+};
+```
+
+### Throw on Error Pattern
+
+If you prefer exception-based error handling, you can throw errors:
+
+```typescript
+const getReceiverOrThrow = async (receiverId: string) => {
+  const { data, error } = await blindpay.receivers.get(receiverId);
+  
+  if (error) {
+    throw new Error(`Failed to get receiver: ${error.message}`);
+  }
+  
+  return data;
+};
+
+// Usage
+try {
+  const receiver = await getReceiverOrThrow("re_abc123");
+  console.log(receiver.email);
+} catch (err) {
+  console.error(err.message);
+}
+```
+
+### Wrapper Helper Pattern
+
+Create a helper function to handle the response pattern:
+
+```typescript
+function unwrap<T>(response: BlindpayApiResponse<T>): T {
+  if (response.error) {
+    throw new Error(response.error.message);
+  }
+  return response.data;
+}
+
+// Usage
+try {
+  const receiver = unwrap(await blindpay.receivers.get("re_abc123"));
+  const accounts = unwrap(await blindpay.receivers.bankAccounts.list(receiver.id));
+  const quote = unwrap(await blindpay.quotes.create({ /* ... */ }));
+  
+  console.log("Quote created:", quote.id);
+} catch (err) {
+  console.error("Failed:", err.message);
+}
+```
+
+### Validation Before API Calls
+
+Validate input before making API calls to provide better error messages:
+
+```typescript
+const createQuoteSafely = async (bankAccountId: string, amount: number) => {
+  // Validate inputs
+  if (!bankAccountId) {
+    return { 
+      data: null, 
+      error: { message: "Bank account ID is required" } 
+    };
+  }
+  
+  if (amount <= 0) {
+    return { 
+      data: null, 
+      error: { message: "Amount must be greater than 0" } 
+    };
+  }
+  
+  if (amount > 1000000) {
+    return { 
+      data: null, 
+      error: { message: "Amount exceeds maximum limit" } 
+    };
+  }
+  
+  // Make the API call
+  return await blindpay.quotes.create({
+    bank_account_id: bankAccountId,
+    currency_type: "sender",
+    request_amount: amount,
+    network: "base",
+    token: "USDC",
+    cover_fees: true
+  });
+};
+```
+
+## Common Error Scenarios
+
+### Invalid Credentials
+
+```typescript
+const blindpay = new BlindPay({
+  apiKey: "invalid-key",
+  instanceId: "in_000000000000"
+});
+
+const { data, error } = await blindpay.receivers.list();
+
+if (error) {
+  // error.message: "Unauthorized" or "Invalid API key"
+  console.error("Authentication failed:", error.message);
+}
+```
+
+### Resource Not Found
+
+```typescript
+const { data, error } = await blindpay.receivers.get("re_nonexistent");
+
+if (error) {
+  // error.message: "Receiver not found" or similar
+  console.error("Receiver not found:", error.message);
+}
+```
+
+### Validation Errors
+
+```typescript
+const { data, error } = await blindpay.receivers.createIndividualWithStandardKYC({
+  country: "US",
+  email: "invalid-email" // Invalid email format
+});
+
+if (error) {
+  // error.message will describe the validation failure
+  console.error("Validation failed:", error.message);
+}
+```
+
+### Quote Expired
+
+```typescript
+const { data: quote, error: quoteError } = await blindpay.quotes.create({
+  bank_account_id: "ba_abc123",
+  currency_type: "sender",
+  request_amount: 1000,
+  network: "base",
+  token: "USDC",
+  cover_fees: true
+});
+
+if (quoteError) {
+  console.error("Quote creation failed:", quoteError.message);
+  return;
+}
+
+// Wait too long...
+await new Promise(resolve => setTimeout(resolve, 15 * 60 * 1000)); // 15 minutes
+
+// Try to use expired quote
+const { data: payout, error: payoutError } = await blindpay.payouts.createEvm({
+  quote_id: quote.id,
+  sender_wallet_address: "0x..."
+});
+
+if (payoutError) {
+  // error.message: "Quote has expired" or similar
+  console.error("Payout failed:", payoutError.message);
+  // Create a new quote
+}
+```
+
+### Rate Limits
+
+```typescript
+const { data, error } = await blindpay.receivers.list();
+
+if (error) {
+  // error.message: "Rate limit exceeded" or similar
+  console.error("Rate limited:", error.message);
+  // Implement exponential backoff
+}
+```
+
+### Network Errors
+
+```typescript
+const { data, error } = await blindpay.receivers.list();
+
+if (error) {
+  // Network errors are caught and returned as error responses
+  // error.message: "Network request failed" or similar
+  console.error("Network error:", error.message);
+  // Retry with exponential backoff
+}
+```
+
+## Error Recovery Strategies
+
+### Retry with Exponential Backoff
+
+```typescript
+const withRetry = async <T>(
+  fn: () => Promise<BlindpayApiResponse<T>>,
+  maxRetries = 3,
+  baseDelay = 1000
+): Promise<BlindpayApiResponse<T>> => {
+  let lastError;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const response = await fn();
+    
+    if (response.data) {
+      return response; // Success
+    }
+    
+    lastError = response.error;
+    
+    // Don't retry on certain errors
+    if (response.error.message.includes("not found") ||
+        response.error.message.includes("Unauthorized")) {
+      return response; // Don't retry
+    }
+    
+    // Wait before retrying
+    if (attempt < maxRetries - 1) {
+      const delay = baseDelay * Math.pow(2, attempt);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  // Return the last error after all retries
+  return { data: null, error: lastError! };
+};
+
+// Usage
+const { data, error } = await withRetry(() => 
+  blindpay.receivers.get("re_abc123")
+);
+```
+
+### Fallback Values
+
+```typescript
+const getReceiverWithFallback = async (receiverId: string) => {
+  const { data, error } = await blindpay.receivers.get(receiverId);
+  
+  if (error) {
+    console.error("Failed to get receiver:", error.message);
+    return {
+      id: receiverId,
+      email: "unknown@example.com",
+      first_name: "Unknown",
+      last_name: "User"
+    };
+  }
+  
+  return data;
+};
+```
+
+### User-Friendly Error Messages
+
+```typescript
+const getUserFriendlyError = (error: { message: string }): string => {
+  const message = error.message.toLowerCase();
+  
+  if (message.includes("unauthorized") || message.includes("api key")) {
+    return "Authentication failed. Please check your credentials.";
+  }
+  
+  if (message.includes("not found")) {
+    return "The requested resource could not be found.";
+  }
+  
+  if (message.includes("rate limit")) {
+    return "Too many requests. Please try again in a few minutes.";
+  }
+  
+  if (message.includes("network") || message.includes("timeout")) {
+    return "Network error. Please check your connection and try again.";
+  }
+  
+  if (message.includes("expired")) {
+    return "This quote has expired. Please create a new one.";
+  }
+  
+  // Default message
+  return "An unexpected error occurred. Please try again.";
+};
+
+// Usage
+const { data, error } = await blindpay.quotes.create({ /* ... */ });
+
+if (error) {
+  const friendlyMessage = getUserFriendlyError(error);
+  console.error(friendlyMessage);
+  // Show to user in UI
+}
+```
+
+## Logging and Monitoring
+
+### Structured Error Logging
+
+```typescript
+const logError = (operation: string, error: { message: string }, context?: any) => {
+  console.error({
+    timestamp: new Date().toISOString(),
+    operation,
+    error: error.message,
+    context
+  });
+};
+
+// Usage
+const { data, error } = await blindpay.receivers.get(receiverId);
+
+if (error) {
+  logError("get_receiver", error, { receiverId });
+}
+```
+
+### Error Tracking Integration
+
+```typescript
+import * as Sentry from '@sentry/node';
+
+const { data, error } = await blindpay.quotes.create({ /* ... */ });
+
+if (error) {
+  Sentry.captureException(new Error(error.message), {
+    tags: {
+      operation: 'create_quote',
+      service: 'blindpay'
+    },
+    extra: {
+      bank_account_id: bankAccountId,
+      amount: requestAmount
+    }
+  });
+}
+```
+
+## BlindPayError Class
+
+The SDK also exports a `BlindPayError` class for client-side validation:
+
+```typescript
+import { BlindPay, BlindPayError } from 'blindpay-node-sdk';
+
+try {
+  const blindpay = new BlindPay({
+    apiKey: "", // Empty API key
+    instanceId: "in_000000000000"
+  });
+} catch (error) {
+  if (error instanceof BlindPayError) {
+    console.error("BlindPay initialization error:", error.message);
+  }
+}
+```
+
+The constructor throws `BlindPayError` if:
+- API key is missing or empty
+- Instance ID is missing or empty
+
+## Best Practices
+
+1. **Always check for errors**: Never assume API calls succeed. Check the error field on every response.
+
+2. **Provide context in error logs**: Include relevant IDs, parameters, and state when logging errors.
+
+3. **Use type narrowing**: Let TypeScript's type narrowing help you write safer code.
+
+4. **Handle errors at the appropriate level**: Handle errors close to where they occur, but allow critical errors to bubble up.
+
+5. **Implement retry logic for transient errors**: Network errors and rate limits can often be resolved with retries.
+
+6. **Show user-friendly messages**: Transform technical error messages into helpful guidance for end users.
+
+7. **Monitor and alert on errors**: Track error rates and patterns in your production environment.
+
+8. **Test error scenarios**: Write tests that cover error cases, not just happy paths.
+
+9. **Document error handling**: Make sure your team knows how to handle common error scenarios.
+
+10. **Validate before API calls**: Catch obvious errors before making network requests.

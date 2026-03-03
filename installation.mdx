@@ -1,0 +1,369 @@
+---
+title: Installation
+description: Detailed installation instructions for the BlindPay Node.js SDK
+---
+
+# Installation
+
+This guide covers everything you need to know about installing and setting up the BlindPay Node.js SDK in your project.
+
+## Requirements
+
+Before installing the SDK, ensure your environment meets these requirements:
+
+- **Node.js**: Version 18.x or higher
+- **Package Manager**: npm, yarn, pnpm, or bun
+- **TypeScript** (optional): Version 5.x or higher for TypeScript projects
+
+<Note>
+  The SDK is built with TypeScript and includes type definitions out of the box. You don't need to install separate `@types` packages.
+</Note>
+
+## Package Manager Installation
+
+Choose your preferred package manager and run the corresponding command:
+
+<CodeGroup>
+  ```bash npm
+  npm install @blindpay/node
+  ```
+
+  ```bash yarn
+  yarn add @blindpay/node
+  ```
+
+  ```bash pnpm
+  pnpm add @blindpay/node
+  ```
+
+  ```bash bun
+  bun add @blindpay/node
+  ```
+</CodeGroup>
+
+## Package Information
+
+The `@blindpay/node` package includes:
+
+- **CommonJS**: For Node.js projects using `require()`
+- **ES Modules**: For modern projects using `import`
+- **TypeScript Declarations**: Full type definitions included
+- **Dependencies**: Only `svix` for webhook signature verification
+
+<Tip>
+  The package size is minimal with only one dependency, ensuring fast installation and a small bundle size.
+</Tip>
+
+## TypeScript Configuration
+
+For TypeScript projects, no additional configuration is required. The SDK includes full type definitions.
+
+Optionally, ensure your `tsconfig.json` has these settings for optimal experience:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  }
+}
+```
+
+## Importing the SDK
+
+The SDK supports both CommonJS and ES Module imports:
+
+<CodeGroup>
+  ```typescript ES Modules (TypeScript/Modern Node.js)
+  import { BlindPay } from '@blindpay/node';
+
+  // Import specific types
+  import type { 
+    Payin, 
+    Payout, 
+    CreateQuoteInput 
+  } from '@blindpay/node';
+  ```
+
+  ```javascript CommonJS (Node.js)
+  const { BlindPay } = require('@blindpay/node');
+  ```
+</CodeGroup>
+
+## Exported Types and Modules
+
+The SDK exports the following main components:
+
+### Core Client
+
+```typescript
+import { BlindPay } from '@blindpay/node';
+```
+
+The main client class used to interact with the BlindPay API.
+
+### Resource Types
+
+Import types for type-safe development:
+
+```typescript
+import type {
+  // Payin types
+  Payin,
+  ListPayinsInput,
+  CreatePayinInput,
+  
+  // Payout types
+  Payout,
+  ListPayoutsInput,
+  CreatePayoutInput,
+  CreateEvmPayoutInput,
+  CreateStellarPayoutInput,
+  CreateSolanaPayoutInput,
+  
+  // Quote types
+  CreateQuoteInput,
+  CreateQuoteResponse,
+  GetFxRateInput,
+  GetFxRateResponse,
+  
+  // Receiver types
+  CreateIndividualWithStandardKYCInput,
+  CreateBusinessWithStandardKYBInput,
+  IndividualWithStandardKYC,
+  BusinessWithStandardKYB,
+  
+  // Available types
+  GetRailsResponse,
+  GetBankDetailsResponse,
+  
+  // Common types
+  Network,
+  StablecoinToken,
+  Currency,
+  Rail,
+  TransactionStatus
+} from '@blindpay/node';
+```
+
+## Environment Setup
+
+Create a `.env` file in your project root to store your credentials:
+
+```bash .env
+BLINDPAY_API_KEY=your_api_key_here
+BLINDPAY_INSTANCE_ID=your_instance_id_here
+```
+
+<Warning>
+  Never commit your `.env` file to version control. Add it to your `.gitignore`:
+  
+  ```bash .gitignore
+  .env
+  .env.local
+  .env.*.local
+  ```
+</Warning>
+
+### Loading Environment Variables
+
+For Node.js 20.6.0+, use the built-in `.env` support:
+
+```bash
+node --env-file=.env your-script.js
+```
+
+For older versions, use the `dotenv` package:
+
+```bash
+npm install dotenv
+```
+
+```typescript
+import 'dotenv/config';
+import { BlindPay } from '@blindpay/node';
+
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY!,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID!
+});
+```
+
+## Verifying Installation
+
+Create a simple test file to verify the installation:
+
+```typescript test.ts
+import { BlindPay } from '@blindpay/node';
+
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY!,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID!
+});
+
+async function test() {
+  const { data, error } = await blindpay.available.getRails();
+  
+  if (error) {
+    console.error('Error:', error.message);
+    process.exit(1);
+  }
+  
+  console.log('✓ BlindPay SDK is working!');
+  console.log(`Found ${data.length} payment rails`);
+}
+
+test();
+```
+
+Run the test:
+
+```bash
+npx tsx test.ts
+```
+
+## Framework Integration Examples
+
+### Express.js
+
+```typescript
+import express from 'express';
+import { BlindPay } from '@blindpay/node';
+
+const app = express();
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY!,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID!
+});
+
+app.get('/api/payouts', async (req, res) => {
+  const { data, error } = await blindpay.payouts.list();
+  
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+  
+  res.json(data);
+});
+
+app.listen(3000);
+```
+
+### Next.js (App Router)
+
+```typescript app/api/payouts/route.ts
+import { BlindPay } from '@blindpay/node';
+import { NextResponse } from 'next/server';
+
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY!,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID!
+});
+
+export async function GET() {
+  const { data, error } = await blindpay.payouts.list();
+  
+  if (error) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: 500 }
+    );
+  }
+  
+  return NextResponse.json(data);
+}
+```
+
+### NestJS
+
+```typescript blindpay.service.ts
+import { Injectable } from '@nestjs/common';
+import { BlindPay } from '@blindpay/node';
+import { ConfigService } from '@nestjs/config';
+
+@Injectable()
+export class BlindPayService {
+  private readonly client: BlindPay;
+
+  constructor(private configService: ConfigService) {
+    this.client = new BlindPay({
+      apiKey: this.configService.get('BLINDPAY_API_KEY')!,
+      instanceId: this.configService.get('BLINDPAY_INSTANCE_ID')!
+    });
+  }
+
+  async getPayouts() {
+    return await this.client.payouts.list();
+  }
+}
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Module not found: Can't resolve '@blindpay/node'">
+    This usually means the package wasn't installed correctly. Try:
+    
+    1. Delete `node_modules` and lock file
+    2. Clear your package manager cache
+    3. Reinstall dependencies
+    
+    ```bash
+    rm -rf node_modules package-lock.json
+    npm cache clean --force
+    npm install
+    ```
+  </Accordion>
+
+  <Accordion title="TypeScript errors about missing types">
+    Make sure you have `@types/node` installed as a dev dependency:
+    
+    ```bash
+    npm install --save-dev @types/node
+    ```
+    
+    The SDK includes its own type definitions, but you need `@types/node` for Node.js built-in types.
+  </Accordion>
+
+  <Accordion title="Cannot use import statement outside a module">
+    If you're using ES modules, ensure your `package.json` includes:
+    
+    ```json
+    {
+      "type": "module"
+    }
+    ```
+    
+    Or use the `.mts` file extension for TypeScript files.
+  </Accordion>
+
+  <Accordion title="Error: Api key not provided">
+    This error occurs when initializing the BlindPay client without credentials. Make sure:
+    
+    1. Your environment variables are loaded
+    2. The variable names match exactly
+    3. You're not passing `undefined` values
+    
+    ```typescript
+    // Verify your env vars are loaded
+    console.log('API Key exists:', !!process.env.BLINDPAY_API_KEY);
+    console.log('Instance ID exists:', !!process.env.BLINDPAY_INSTANCE_ID);
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Learn how to get and manage your API credentials
+  </Card>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Make your first API call in 5 minutes
+  </Card>
+</CardGroup>

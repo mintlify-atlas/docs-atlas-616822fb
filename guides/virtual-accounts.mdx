@@ -1,0 +1,449 @@
+---
+title: Virtual Accounts
+description: Guide for creating and managing virtual bank accounts for receiving fiat payments
+---
+
+Virtual accounts provide dedicated US bank account details for receivers to accept recurring fiat payments that automatically convert to stablecoins. This eliminates the need to create a new payin for each transaction.
+
+## Overview
+
+A virtual account gives your receiver:
+- Dedicated ACH, Wire, and RTP routing/account numbers
+- Automatic fiat-to-crypto conversion
+- Direct deposit to a blockchain wallet
+- Support for recurring payments
+
+<Note>
+Virtual accounts are currently available for US dollar (USD) payments through banking partners JPMorgan, Citi, and HSBC.
+</Note>
+
+## Prerequisites
+
+Before creating a virtual account:
+
+- Receiver must have completed KYC/KYB
+- Receiver must have an approved KYC status
+- A blockchain wallet must be registered for the receiver
+- Accept the banking partner's terms of service
+
+## Step 1: Create a Blockchain Wallet
+
+<Steps>
+  <Step title="Register blockchain wallet">
+    First, create a blockchain wallet for the receiver to receive converted stablecoins:
+
+    ```typescript
+    import { BlindPay } from '@blindpay/sdk';
+
+    const blindpay = new BlindPay({
+      apiKey: process.env.BLINDPAY_API_KEY,
+      instanceId: process.env.BLINDPAY_INSTANCE_ID
+    });
+
+    // For Account Abstraction wallets (recommended)
+    const { data: wallet, error } = await blindpay.wallets.blockchain.createWithAddress({
+      receiver_id: 're_000000000000',
+      name: 'Primary Wallet',
+      network: 'base',
+      address: '0xYourWalletAddress'
+    });
+
+    if (error) {
+      console.error('Error creating wallet:', error.message);
+      return;
+    }
+
+    console.log('Wallet created:', {
+      id: wallet.id,
+      address: wallet.address,
+      network: wallet.network
+    });
+    ```
+
+    <Tip>
+    Use Account Abstraction wallets (`createWithAddress`) for better UX. Traditional wallets require signature verification (`createWithHash`).
+    </Tip>
+  </Step>
+</Steps>
+
+## Step 2: Create Virtual Account
+
+<Steps>
+  <Step title="Create the virtual account">
+    Create a virtual account linked to the blockchain wallet:
+
+    ```typescript
+    const { data: virtualAccount, error } = await blindpay.virtualAccounts.create({
+      receiver_id: 're_000000000000',
+      banking_partner: 'jpmorgan', // 'jpmorgan', 'citi', or 'hsbc'
+      token: 'USDC',
+      blockchain_wallet_id: wallet.id,
+      signed_agreement_id: null // Required if banking partner requires agreement
+    });
+
+    if (error) {
+      console.error('Error creating virtual account:', error.message);
+      return;
+    }
+
+    console.log('Virtual account created:', {
+      id: virtualAccount.id,
+      banking_partner: virtualAccount.banking_partner,
+      kyc_status: virtualAccount.kyc_status
+    });
+    ```
+  </Step>
+
+  <Step title="Display account details">
+    Share the account details with your receiver:
+
+    ```typescript
+    const { us } = virtualAccount;
+
+    console.log('ACH Details:', {
+      routing_number: us.ach.routing_number,
+      account_number: us.ach.account_number,
+      account_type: us.account_type
+    });
+
+    console.log('Wire Details:', {
+      routing_number: us.wire.routing_number,
+      account_number: us.wire.account_number,
+      swift_bic_code: us.swift_bic_code
+    });
+
+    console.log('RTP (Real-Time Payments):', {
+      routing_number: us.rtp.routing_number,
+      account_number: us.rtp.account_number
+    });
+
+    console.log('Beneficiary:', {
+      name: us.beneficiary.name,
+      address_line_1: us.beneficiary.address_line_1,
+      address_line_2: us.beneficiary.address_line_2
+    });
+
+    console.log('Receiving Bank:', {
+      name: us.receiving_bank.name,
+      address_line_1: us.receiving_bank.address_line_1,
+      address_line_2: us.receiving_bank.address_line_2
+    });
+    ```
+  </Step>
+</Steps>
+
+## Step 3: Managing Virtual Accounts
+
+### List Virtual Accounts
+
+```typescript
+// Get all virtual accounts for a receiver
+const { data: accounts, error } = await blindpay.virtualAccounts.list(
+  're_000000000000'
+);
+
+if (error) {
+  console.error('Error listing accounts:', error.message);
+  return;
+}
+
+accounts.forEach(account => {
+  console.log(`Account ${account.id}:`, {
+    banking_partner: account.banking_partner,
+    token: account.token,
+    kyc_status: account.kyc_status,
+    blockchain_wallet: account.blockchain_wallet
+  });
+});
+```
+
+### Get Specific Virtual Account
+
+```typescript
+const { data: account, error } = await blindpay.virtualAccounts.get({
+  receiver_id: 're_000000000000',
+  id: 'va_000000000000'
+});
+
+if (error) {
+  console.error('Error fetching account:', error.message);
+  return;
+}
+
+console.log('Account details:', account);
+```
+
+### Update Virtual Account
+
+```typescript
+// Update the blockchain wallet or token for a virtual account
+const { data, error } = await blindpay.virtualAccounts.update({
+  receiver_id: 're_000000000000',
+  id: 'va_000000000000',
+  token: 'USDT', // Change from USDC to USDT
+  blockchain_wallet_id: 'bw_000000000001' // Update destination wallet
+});
+
+if (error) {
+  console.error('Error updating account:', error.message);
+  return;
+}
+
+console.log('Virtual account updated successfully');
+```
+
+<Warning>
+Updating the blockchain wallet will redirect all future deposits to the new wallet address. Past transactions are not affected.
+</Warning>
+
+## Banking Partner Selection
+
+<CodeGroup>
+```typescript JPMorgan Chase
+const { data: account } = await blindpay.virtualAccounts.create({
+  receiver_id: 're_000000000000',
+  banking_partner: 'jpmorgan',
+  token: 'USDC',
+  blockchain_wallet_id: 'bw_000000000000',
+  signed_agreement_id: null
+});
+
+// JPMorgan provides:
+// - ACH, Wire, and RTP support
+// - Fast processing times
+// - Strong compliance
+```
+
+```typescript Citi
+const { data: account } = await blindpay.virtualAccounts.create({
+  receiver_id: 're_000000000000',
+  banking_partner: 'citi',
+  token: 'USDC',
+  blockchain_wallet_id: 'bw_000000000000',
+  signed_agreement_id: null
+});
+
+// Citi provides:
+// - Global banking network
+// - International wire support
+// - Enterprise-grade infrastructure
+```
+
+```typescript HSBC
+const { data: account } = await blindpay.virtualAccounts.create({
+  receiver_id: 're_000000000000',
+  banking_partner: 'hsbc',
+  token: 'USDC',
+  blockchain_wallet_id: 'bw_000000000000',
+  signed_agreement_id: null
+});
+
+// HSBC provides:
+// - International presence
+// - Multi-currency support
+// - Established reputation
+```
+</CodeGroup>
+
+## How Deposits Work
+
+<Steps>
+  <Step title="Customer sends USD">
+    Customer sends USD to the virtual account via ACH, Wire, or RTP using the provided account details.
+  </Step>
+
+  <Step title="BlindPay receives payment">
+    The banking partner receives the fiat payment and notifies BlindPay.
+  </Step>
+
+  <Step title="Automatic conversion">
+    BlindPay automatically:
+    - Converts USD to the specified stablecoin (USDC/USDT)
+    - Deducts applicable fees
+    - Initiates blockchain transfer
+  </Step>
+
+  <Step title="Stablecoins deposited">
+    Stablecoins are deposited to the linked blockchain wallet on the specified network.
+  </Step>
+
+  <Step title="Webhook notification">
+    You receive webhook notifications at each stage:
+    - `payin.new`: Payment received
+    - `payin.update`: Conversion in progress
+    - `payin.complete`: Stablecoins deposited
+  </Step>
+</Steps>
+
+## Monitoring Deposits
+
+Virtual account deposits create payins automatically:
+
+```typescript
+// List payins for a receiver to see virtual account deposits
+const { data: payins } = await blindpay.payins.list({
+  receiver_id: 're_000000000000'
+});
+
+payins.data.forEach(payin => {
+  if (payin.has_virtual_account) {
+    console.log('Virtual account deposit:', {
+      id: payin.id,
+      sender_amount: payin.sender_amount, // USD received
+      receiver_amount: payin.receiver_amount, // USDC sent
+      status: payin.status,
+      created_at: payin.created_at
+    });
+  }
+});
+```
+
+<Tip>
+Set up webhooks to receive real-time notifications when deposits arrive instead of polling.
+</Tip>
+
+## KYC Status
+
+Virtual accounts require approved KYC:
+
+```typescript
+const { data: account } = await blindpay.virtualAccounts.get({
+  receiver_id: 're_000000000000',
+  id: 'va_000000000000'
+});
+
+// Check KYC status
+switch (account.kyc_status) {
+  case 'approved':
+    console.log('Account active and ready to receive deposits');
+    break;
+  case 'pending':
+    console.log('KYC review in progress');
+    break;
+  case 'rejected':
+    console.log('KYC rejected, account cannot receive deposits');
+    break;
+  default:
+    console.log('Unknown KYC status:', account.kyc_status);
+}
+```
+
+## Complete Example
+
+```typescript
+import { BlindPay } from '@blindpay/sdk';
+
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID
+});
+
+async function setupVirtualAccount(receiverId: string, walletAddress: string) {
+  // Step 1: Create blockchain wallet
+  const { data: wallet, error: walletError } = 
+    await blindpay.wallets.blockchain.createWithAddress({
+      receiver_id: receiverId,
+      name: 'Virtual Account Wallet',
+      network: 'base',
+      address: walletAddress
+    });
+
+  if (walletError) {
+    throw new Error(`Wallet creation failed: ${walletError.message}`);
+  }
+
+  // Step 2: Create virtual account
+  const { data: virtualAccount, error: accountError } = 
+    await blindpay.virtualAccounts.create({
+      receiver_id: receiverId,
+      banking_partner: 'jpmorgan',
+      token: 'USDC',
+      blockchain_wallet_id: wallet.id,
+      signed_agreement_id: null
+    });
+
+  if (accountError) {
+    throw new Error(`Virtual account creation failed: ${accountError.message}`);
+  }
+
+  // Step 3: Return account details
+  return {
+    accountId: virtualAccount.id,
+    bankingDetails: {
+      ach: virtualAccount.us.ach,
+      wire: virtualAccount.us.wire,
+      rtp: virtualAccount.us.rtp,
+      beneficiary: virtualAccount.us.beneficiary
+    },
+    blockchain: {
+      network: virtualAccount.blockchain_wallet?.network,
+      address: virtualAccount.blockchain_wallet?.address
+    },
+    status: virtualAccount.kyc_status
+  };
+}
+
+// Usage
+setupVirtualAccount('re_000000000000', '0xYourWalletAddress')
+  .then(details => {
+    console.log('Virtual account ready:', details);
+    // Share banking details with your customer
+  })
+  .catch(error => {
+    console.error('Setup failed:', error);
+  });
+```
+
+## Error Handling
+
+```typescript
+const { data: account, error } = await blindpay.virtualAccounts.create({
+  receiver_id: 're_000000000000',
+  banking_partner: 'jpmorgan',
+  token: 'USDC',
+  blockchain_wallet_id: 'bw_000000000000',
+  signed_agreement_id: null
+});
+
+if (error) {
+  if (error.message.includes('KYC')) {
+    console.error('KYC not approved. Complete KYC first.');
+  } else if (error.message.includes('wallet')) {
+    console.error('Invalid blockchain wallet ID');
+  } else if (error.message.includes('agreement')) {
+    console.error('Banking partner agreement required');
+  } else {
+    console.error('Unknown error:', error.message);
+  }
+  return;
+}
+```
+
+## Best Practices
+
+1. **Network Selection**: Use Base or Polygon for lower gas fees on deposits
+2. **Token Choice**: USDC is more widely supported than USDT
+3. **Wallet Security**: Use Account Abstraction wallets when possible for better security
+4. **KYC First**: Complete and approve KYC before creating virtual accounts
+5. **Banking Partner**: Choose based on receiver's location and banking relationships
+6. **Webhooks**: Set up webhook listeners for deposit notifications
+7. **Display Details**: Clearly show all three payment methods (ACH, Wire, RTP) to receivers
+8. **Update Carefully**: Only update virtual accounts when absolutely necessary
+
+## Limitations
+
+- Virtual accounts are currently USD-only
+- Minimum deposit amounts may apply (varies by banking partner)
+- ACH deposits take 1-3 business days
+- Wire deposits are typically same-day
+- RTP deposits are near-instant
+
+<Note>
+Virtual accounts do not support outbound payments (payouts). Use the regular payout flow for crypto-to-fiat conversions.
+</Note>
+
+## Next Steps
+
+- Learn about [blockchain wallets](/guides/blockchain-wallets) for managing destination addresses
+- Set up [webhook verification](/guides/webhook-verification) to track deposits
+- Explore the [payins guide](/guides/payins) to understand the deposit flow

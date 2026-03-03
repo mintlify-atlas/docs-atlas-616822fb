@@ -1,0 +1,328 @@
+---
+title: "Utilities"
+description: "Methods for querying available payment rails and bank detail requirements"
+---
+
+The `available` resource provides utility methods to discover supported payment rails and their required bank details.
+
+## Methods
+
+### getRails()
+
+Retrieve all available payment rails supported by BlindPay.
+
+```typescript
+const { data, error } = await blindpay.available.getRails();
+```
+
+<ResponseField name="data" type="array">
+  Array of available payment rails
+  
+  <Expandable title="properties">
+    <ResponseField name="label" type="string" required>
+      Human-readable name of the payment rail
+    </ResponseField>
+    
+    <ResponseField name="value" type="Rail" required>
+      The rail identifier. One of: `"wire"`, `"ach"`, `"pix"`, `"spei_bitso"`, `"transfers_bitso"`, `"ach_cop_bitso"`, `"international_swift"`, or `"rtp"`
+    </ResponseField>
+    
+    <ResponseField name="country" type="string" required>
+      Two-letter ISO country code (e.g., "US", "BR", "MX")
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="error" type="ErrorResponse | null">
+  Error object if the request failed, null otherwise
+</ResponseField>
+
+#### Example Response
+
+```json
+[
+  {
+    "label": "Domestic Wire",
+    "value": "wire",
+    "country": "US"
+  },
+  {
+    "label": "ACH",
+    "value": "ach",
+    "country": "US"
+  },
+  {
+    "label": "PIX",
+    "value": "pix",
+    "country": "BR"
+  },
+  {
+    "label": "SPEI",
+    "value": "spei_bitso",
+    "country": "MX"
+  },
+  {
+    "label": "Transfers 3.0",
+    "value": "transfers_bitso",
+    "country": "AR"
+  },
+  {
+    "label": "ACH Colombia",
+    "value": "ach_cop_bitso",
+    "country": "CO"
+  },
+  {
+    "label": "International Swift",
+    "value": "international_swift",
+    "country": "US"
+  },
+  {
+    "label": "RTP",
+    "value": "rtp",
+    "country": "US"
+  }
+]
+```
+
+---
+
+### getBankDetails()
+
+Get the required bank detail fields for a specific payment rail. This method returns the fields you need to collect when creating a bank account for the specified rail.
+
+```typescript
+const { data, error } = await blindpay.available.getBankDetails("pix");
+```
+
+<ParamField path="rail" type="Rail" required>
+  The payment rail to query. Must be one of: `"wire"`, `"ach"`, `"pix"`, `"spei_bitso"`, `"transfers_bitso"`, `"ach_cop_bitso"`, `"international_swift"`, or `"rtp"`
+</ParamField>
+
+<ResponseField name="data" type="array">
+  Array of bank detail field requirements
+  
+  <Expandable title="properties">
+    <ResponseField name="label" type="string" required>
+      Human-readable label for the field
+    </ResponseField>
+    
+    <ResponseField name="key" type="BankDetailKey" required>
+      The field identifier used when creating bank accounts. See [BankDetailKey enum](#bankdetailkey-enum) for all possible values.
+    </ResponseField>
+    
+    <ResponseField name="regex" type="string" required>
+      Validation regex pattern for the field (empty string if no pattern required)
+    </ResponseField>
+    
+    <ResponseField name="required" type="boolean" required>
+      Whether this field is required
+    </ResponseField>
+    
+    <ResponseField name="items" type="array">
+      Array of predefined options for select-type fields
+      
+      <Expandable title="properties">
+        <ResponseField name="label" type="string" required>
+          Display label for the option
+        </ResponseField>
+        
+        <ResponseField name="value" type="string" required>
+          The value to submit
+        </ResponseField>
+        
+        <ResponseField name="is_active" type="boolean">
+          Whether this option is currently active
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="error" type="ErrorResponse | null">
+  Error object if the request failed, null otherwise
+</ResponseField>
+
+#### Example Response
+
+```json
+[
+  {
+    "label": "Account Type",
+    "regex": "",
+    "key": "account_type",
+    "items": [
+      {
+        "label": "Checking",
+        "value": "checking"
+      },
+      {
+        "label": "Savings",
+        "value": "saving"
+      }
+    ],
+    "required": true
+  }
+]
+```
+
+---
+
+### getSwiftCodeBankDetails()
+
+Look up bank information using a SWIFT/BIC code. This is useful for validating and auto-filling bank details for international SWIFT transfers.
+
+```typescript
+const { data, error } = await blindpay.available.getSwiftCodeBankDetails("BOFAUS3NLMA");
+```
+
+<ParamField path="swiftCode" type="string" required>
+  The SWIFT/BIC code to look up (e.g., "BOFAUS3NLMA")
+</ParamField>
+
+<ResponseField name="data" type="array">
+  Array of matching bank records for the SWIFT code
+  
+  <Expandable title="properties">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for this SWIFT code entry
+    </ResponseField>
+    
+    <ResponseField name="bank" type="string" required>
+      Full name of the bank
+    </ResponseField>
+    
+    <ResponseField name="city" type="string" required>
+      City where the bank branch is located
+    </ResponseField>
+    
+    <ResponseField name="branch" type="string" required>
+      Branch name or identifier
+    </ResponseField>
+    
+    <ResponseField name="swiftCode" type="string" required>
+      The SWIFT/BIC code
+    </ResponseField>
+    
+    <ResponseField name="swiftCodeLink" type="string" required>
+      URL to more information about this SWIFT code
+    </ResponseField>
+    
+    <ResponseField name="country" type="string" required>
+      Full country name
+    </ResponseField>
+    
+    <ResponseField name="countrySlug" type="string" required>
+      URL-friendly country identifier
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="error" type="ErrorResponse | null">
+  Error object if the request failed, null otherwise
+</ResponseField>
+
+#### Example Response
+
+```json
+[
+  {
+    "id": "416",
+    "bank": "BANK OF AMERICA, N.A.",
+    "city": "NEW JERSEY",
+    "branch": "LENDING SERVICES AND OPERATIONS (LSOP)",
+    "swiftCode": "BOFAUS3NLMA",
+    "swiftCodeLink": "https://bank.codes/swift-code/united-states/bofaus3nlma/",
+    "country": "United States",
+    "countrySlug": "united-states"
+  }
+]
+```
+
+---
+
+## Type Reference
+
+### Rail enum
+
+Payment rail identifiers supported by BlindPay:
+
+| Value | Description |
+|-------|-------------|
+| `"wire"` | Domestic Wire (US) |
+| `"ach"` | ACH (US) |
+| `"pix"` | PIX (Brazil) |
+| `"spei_bitso"` | SPEI (Mexico) |
+| `"transfers_bitso"` | Transfers 3.0 (Argentina) |
+| `"ach_cop_bitso"` | ACH Colombia |
+| `"international_swift"` | International SWIFT |
+| `"rtp"` | Real-Time Payments (US) |
+
+### BankDetailKey enum
+
+Bank detail field identifiers used in bank account creation. The required fields vary by payment rail:
+
+#### General Fields
+- `"type"` - Account type
+- `"name"` - Bank name
+- `"beneficiary_name"` - Account holder name
+- `"routing_number"` - Bank routing number
+- `"account_number"` - Account number
+- `"account_type"` - Type of account (checking/savings)
+- `"account_class"` - Individual or business account
+
+#### Address Fields
+- `"address_line_1"` - Primary address line
+- `"address_line_2"` - Secondary address line
+- `"city"` - City
+- `"state_province_region"` - State, province, or region
+- `"country"` - Country code
+- `"postal_code"` - Postal/ZIP code
+
+#### PIX (Brazil)
+- `"pix_key"` - PIX key identifier
+
+#### SPEI (Mexico)
+- `"spei_protocol"` - SPEI protocol type
+- `"spei_institution_code"` - Bank institution code
+- `"spei_clabe"` - CLABE number (18-digit bank account number)
+
+#### Transfers (Argentina)
+- `"transfers_type"` - Transfer type (CVU, CBU, ALIAS)
+- `"transfers_account"` - Account identifier
+
+#### ACH Colombia
+- `"ach_cop_beneficiary_first_name"` - Beneficiary first name
+- `"ach_cop_beneficiary_last_name"` - Beneficiary last name
+- `"ach_cop_document_id"` - Document ID number
+- `"ach_cop_document_type"` - Document type (CC, CE, NIT, PASS, PEP)
+- `"ach_cop_email"` - Email address
+- `"ach_cop_bank_code"` - Bank code
+- `"ach_cop_bank_account"` - Bank account number
+
+#### International SWIFT
+- `"swift_code_bic"` - SWIFT/BIC code
+- `"swift_account_holder_name"` - Account holder name
+- `"swift_account_number_iban"` - Account number or IBAN
+- `"swift_beneficiary_address_line_1"` - Beneficiary address line 1
+- `"swift_beneficiary_address_line_2"` - Beneficiary address line 2
+- `"swift_beneficiary_country"` - Beneficiary country
+- `"swift_beneficiary_city"` - Beneficiary city
+- `"swift_beneficiary_state_province_region"` - Beneficiary state/province/region
+- `"swift_beneficiary_postal_code"` - Beneficiary postal code
+- `"swift_bank_name"` - Bank name
+- `"swift_bank_address_line_1"` - Bank address line 1
+- `"swift_bank_address_line_2"` - Bank address line 2
+- `"swift_bank_country"` - Bank country
+- `"swift_bank_city"` - Bank city
+- `"swift_bank_state_province_region"` - Bank state/province/region
+- `"swift_bank_postal_code"` - Bank postal code
+
+#### SWIFT Intermediary Bank (Optional)
+- `"swift_intermediary_bank_swift_code_bic"` - Intermediary bank SWIFT/BIC
+- `"swift_intermediary_bank_account_number_iban"` - Intermediary bank account/IBAN
+- `"swift_intermediary_bank_name"` - Intermediary bank name
+- `"swift_intermediary_bank_country"` - Intermediary bank country
+
+#### Checkbook (Legacy)
+- `"checkbook_account_id"` - Checkbook account ID
+- `"checkbook_user_key"` - Checkbook user key

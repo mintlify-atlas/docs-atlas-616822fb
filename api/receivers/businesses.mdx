@@ -1,0 +1,450 @@
+---
+title: Business Receivers
+description: Create business receivers with standard KYB verification
+---
+
+Business receivers are legal entities that can receive payouts. BlindPay requires KYB (Know Your Business) verification for all business receivers, including information about the business and its beneficial owners.
+
+## Create Business with Standard KYB
+
+Create a business receiver with standard KYB verification.
+
+```typescript
+const response = await blindpay.receivers.createBusinessWithStandardKYB({
+  country: "US",
+  email: "accounting@acmecorp.com",
+  legal_name: "Acme Corporation",
+  alternate_name: "Acme Corp",
+  formation_date: "2015-03-15",
+  tax_id: "12-3456789",
+  business_type: "corporation",
+  business_industry: "541511",
+  phone_number: "+1-555-0300",
+  website: "https://www.acmecorp.com",
+  address_line_1: "789 Business Blvd",
+  address_line_2: "Suite 200",
+  city: "Chicago",
+  state_province_region: "IL",
+  postal_code: "60601",
+  proof_of_address_doc_type: "UTILITY_BILL",
+  proof_of_address_doc_file: "file_business_address",
+  incorporation_doc_file: "file_articles_inc",
+  proof_of_ownership_doc_file: "file_ownership_cert",
+  account_purpose: "receive_payments_for_goods_and_services",
+  estimated_annual_revenue: "1000000_9999999",
+  owners: [
+    {
+      role: "beneficial_controlling",
+      first_name: "Alice",
+      last_name: "Johnson",
+      date_of_birth: "1975-06-10",
+      tax_id: "111-22-3333",
+      ownership_percentage: 60,
+      title: "CEO",
+      address_line_1: "123 Owner St",
+      city: "Chicago",
+      state_province_region: "IL",
+      country: "US",
+      postal_code: "60602",
+      id_doc_type: "DRIVERS",
+      id_doc_country: "US",
+      id_doc_front_file: "file_owner1_front",
+      id_doc_back_file: "file_owner1_back",
+      proof_of_address_doc_type: "BANK_STATEMENT",
+      proof_of_address_doc_file: "file_owner1_address"
+    },
+    {
+      role: "beneficial_owner",
+      first_name: "Bob",
+      last_name: "Williams",
+      date_of_birth: "1980-09-25",
+      tax_id: "444-55-6666",
+      ownership_percentage: 40,
+      title: "CFO",
+      address_line_1: "456 Partner Ave",
+      city: "Chicago",
+      state_province_region: "IL",
+      country: "US",
+      postal_code: "60603",
+      id_doc_type: "PASSPORT",
+      id_doc_country: "US",
+      id_doc_front_file: "file_owner2_front",
+      proof_of_address_doc_type: "UTILITY_BILL",
+      proof_of_address_doc_file: "file_owner2_address"
+    }
+  ]
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("Business receiver created:", response.data.id);
+}
+```
+
+### Required Parameters
+
+<ParamField body="country" type="string" required>
+  Two-letter ISO country code where the business is registered
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Business email address
+</ParamField>
+
+### Optional Parameters
+
+While technically optional in the API, most of these fields are required for successful KYB verification.
+
+#### Business Information
+
+<ParamField body="legal_name" type="string">
+  Legal name of the business as registered with government authorities
+</ParamField>
+
+<ParamField body="alternate_name" type="string">
+  DBA (Doing Business As) or trade name, if different from legal name
+</ParamField>
+
+<ParamField body="formation_date" type="string">
+  Date the business was formed or incorporated in YYYY-MM-DD format
+</ParamField>
+
+<ParamField body="tax_id" type="string">
+  Business tax identification number (EIN for US, VAT number, etc.)
+</ParamField>
+
+<ParamField body="business_type" type="string">
+  Type of business entity:
+  - `"corporation"` - Corporation (C-Corp or S-Corp)
+  - `"llc"` - Limited Liability Company
+  - `"partnership"` - Partnership
+  - `"sole_proprietorship"` - Sole proprietorship
+  - `"trust"` - Trust
+  - `"non_profit"` - Non-profit organization
+</ParamField>
+
+<ParamField body="business_industry" type="string">
+  NAICS industry classification code (6-digit code as string). Examples:
+  - `"541511"` - Custom Computer Programming Services
+  - `"541512"` - Computer Systems Design Services
+  - `"518210"` - Computing Infrastructure Providers
+  - `"522110"` - Commercial Banking
+  - `"523110"` - Investment Banking and Securities Dealing
+  - See the full NAICS code list for more options
+</ParamField>
+
+<ParamField body="business_description" type="string">
+  Brief description of the business activities and operations
+</ParamField>
+
+<ParamField body="estimated_annual_revenue" type="string">
+  Estimated annual revenue range:
+  - `"0_99999"` - Under $100,000
+  - `"100000_999999"` - $100,000 - $999,999
+  - `"1000000_9999999"` - $1M - $9.99M
+  - `"10000000_49999999"` - $10M - $49.99M
+  - `"50000000_249999999"` - $50M - $249.99M
+  - `"2500000000_plus"` - $250M+
+</ParamField>
+
+<ParamField body="publicly_traded" type="boolean">
+  Whether the business is publicly traded on a stock exchange
+</ParamField>
+
+<ParamField body="website" type="string">
+  Business website URL
+</ParamField>
+
+<ParamField body="phone_number" type="string">
+  Business phone number in international format
+</ParamField>
+
+#### Business Address
+
+<ParamField body="address_line_1" type="string">
+  First line of business address
+</ParamField>
+
+<ParamField body="address_line_2" type="string">
+  Second line of business address (suite, floor, etc.)
+</ParamField>
+
+<ParamField body="city" type="string">
+  City where business is located
+</ParamField>
+
+<ParamField body="state_province_region" type="string">
+  State, province, or region (use two-letter state codes for US)
+</ParamField>
+
+<ParamField body="postal_code" type="string">
+  Postal or ZIP code
+</ParamField>
+
+#### Business Documents
+
+<ParamField body="incorporation_doc_file" type="string">
+  File ID or URL of incorporation documents:
+  - Articles of Incorporation
+  - Certificate of Formation
+  - Business registration certificate
+  - Trust agreement (for trusts)
+</ParamField>
+
+<ParamField body="proof_of_ownership_doc_file" type="string">
+  File ID or URL of ownership documentation:
+  - Stock certificate
+  - Operating agreement
+  - Partnership agreement
+  - Shareholder registry
+</ParamField>
+
+<ParamField body="proof_of_address_doc_type" type="string">
+  Type of proof of address document:
+  - `"UTILITY_BILL"` - Utility bill
+  - `"BANK_STATEMENT"` - Bank statement
+  - `"RENTAL_AGREEMENT"` - Lease agreement
+  - `"TAX_DOCUMENT"` - Tax document
+  - `"GOVERNMENT_CORRESPONDENCE"` - Government correspondence
+</ParamField>
+
+<ParamField body="proof_of_address_doc_file" type="string">
+  File ID or URL of business proof of address (must be dated within last 3 months)
+</ParamField>
+
+#### Compliance Information
+
+<ParamField body="account_purpose" type="string">
+  Purpose of the account:
+  - `"charitable_donations"` - Charitable donations
+  - `"ecommerce_retail_payments"` - E-commerce/retail payments
+  - `"investment_purposes"` - Investment purposes
+  - `"business_expenses"` - Business expenses
+  - `"payments_to_friends_or_family_abroad"` - Payments to friends/family abroad
+  - `"personal_or_living_expenses"` - Personal or living expenses
+  - `"protect_wealth"` - Wealth protection
+  - `"purchase_goods_and_services"` - Purchase goods and services
+  - `"receive_payments_for_goods_and_services"` - Receive payments for goods/services
+  - `"tax_optimization"` - Tax optimization
+  - `"third_party_money_transmission"` - Third-party money transmission
+  - `"payroll"` - Payroll
+  - `"treasury_management"` - Treasury management
+  - `"other"` - Other purpose
+</ParamField>
+
+<ParamField body="source_of_funds_doc_type" type="string">
+  Type of source of funds:
+  - `"business_income"` - Business income
+  - `"investment_proceeds"` - Investment proceeds
+  - `"gambling_proceeds"` - Gambling proceeds
+  - `"gifts"` - Gifts
+  - `"government_benefits"` - Government benefits
+  - `"inheritance"` - Inheritance
+  - `"investment_loans"` - Investment/loans
+  - `"pension_retirement"` - Pension/retirement
+  - `"salary"` - Salary
+  - `"sale_of_assets_real_estate"` - Sale of assets/real estate
+  - `"savings"` - Savings
+  - `"esops"` - ESOPs
+  - `"someone_else_funds"` - Someone else's funds
+</ParamField>
+
+<ParamField body="source_of_funds_doc_file" type="string">
+  File ID or URL of supporting documentation for source of funds
+</ParamField>
+
+<ParamField body="source_of_wealth" type="string">
+  Source of accumulated wealth:
+  - `"business_dividends_or_profits"` - Business dividends or profits
+  - `"investments"` - Investments
+  - `"asset_sales"` - Asset sales
+  - `"client_investor_contributions"` - Client/investor contributions
+  - `"gambling"` - Gambling
+  - `"charitable_contributions"` - Charitable contributions
+  - `"inheritance"` - Inheritance
+  - `"affiliate_or_royalty_income"` - Affiliate or royalty income
+</ParamField>
+
+#### Other Parameters
+
+<ParamField body="external_id" type="string">
+  Your internal identifier for this business receiver
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  URL to business logo or image
+</ParamField>
+
+<ParamField body="ip_address" type="string">
+  IP address from which the business is registering
+</ParamField>
+
+<ParamField body="tos_id" type="string">
+  ID of the terms of service accepted by the business
+</ParamField>
+
+#### Beneficial Owners
+
+<ParamField body="owners" type="array">
+  Array of beneficial owners and controlling persons. At least one owner with 25% or more ownership must be provided.
+  
+  <Expandable title="Owner Object">
+    <ParamField body="role" type="string" required>
+      Owner's role in the business:
+      - `"beneficial_controlling"` - Beneficial owner with controlling interest (25%+ ownership and control)
+      - `"beneficial_owner"` - Beneficial owner (25%+ ownership)
+      - `"controlling_person"` - Controlling person (significant control but may have less than 25% ownership)
+    </ParamField>
+    
+    <ParamField body="first_name" type="string" required>
+      Owner's legal first name
+    </ParamField>
+    
+    <ParamField body="last_name" type="string" required>
+      Owner's legal last name
+    </ParamField>
+    
+    <ParamField body="date_of_birth" type="string" required>
+      Owner's date of birth in YYYY-MM-DD format
+    </ParamField>
+    
+    <ParamField body="tax_id" type="string" required>
+      Owner's tax identification number (SSN, TIN, etc.)
+    </ParamField>
+    
+    <ParamField body="ownership_percentage" type="number">
+      Percentage of ownership (0-100). Required for beneficial owners.
+    </ParamField>
+    
+    <ParamField body="title" type="string">
+      Job title or position in the company (e.g., "CEO", "CFO", "Director")
+    </ParamField>
+    
+    <ParamField body="address_line_1" type="string" required>
+      First line of owner's residential address
+    </ParamField>
+    
+    <ParamField body="address_line_2" type="string">
+      Second line of owner's residential address
+    </ParamField>
+    
+    <ParamField body="city" type="string" required>
+      City
+    </ParamField>
+    
+    <ParamField body="state_province_region" type="string" required>
+      State, province, or region
+    </ParamField>
+    
+    <ParamField body="country" type="string" required>
+      Two-letter ISO country code
+    </ParamField>
+    
+    <ParamField body="postal_code" type="string" required>
+      Postal or ZIP code
+    </ParamField>
+    
+    <ParamField body="id_doc_type" type="string" required>
+      Type of identification document:
+      - `"PASSPORT"` - Passport
+      - `"ID_CARD"` - National ID card
+      - `"DRIVERS"` - Driver's license
+    </ParamField>
+    
+    <ParamField body="id_doc_country" type="string" required>
+      Two-letter ISO country code of document-issuing country
+    </ParamField>
+    
+    <ParamField body="id_doc_front_file" type="string" required>
+      File ID or URL of front of ID document
+    </ParamField>
+    
+    <ParamField body="id_doc_back_file" type="string">
+      File ID or URL of back of ID document (required for ID cards and driver's licenses)
+    </ParamField>
+    
+    <ParamField body="proof_of_address_doc_type" type="string" required>
+      Type of proof of address document:
+      - `"UTILITY_BILL"` - Utility bill
+      - `"BANK_STATEMENT"` - Bank statement
+      - `"RENTAL_AGREEMENT"` - Rental agreement
+      - `"TAX_DOCUMENT"` - Tax document
+      - `"GOVERNMENT_CORRESPONDENCE"` - Government correspondence
+    </ParamField>
+    
+    <ParamField body="proof_of_address_doc_file" type="string">
+      File ID or URL of owner's proof of address (must be dated within 3 months)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the created business receiver
+</ResponseField>
+
+---
+
+## KYB Status and Verification
+
+After creating a business receiver, the KYB verification process begins automatically. You can check the verification status:
+
+```typescript
+const response = await blindpay.receivers.get("rcv_business_123");
+
+if (response.data) {
+  console.log("KYB Status:", response.data.kyc_status);
+  console.log("KYB Warnings:", response.data.kyc_warnings);
+  console.log("Is FBO Account:", response.data.is_fbo);
+}
+```
+
+## Document Requirements
+
+### Business Documents
+
+1. **Incorporation Documents**:
+   - Articles of Incorporation
+   - Certificate of Formation
+   - Trust Agreement (for trusts)
+   - Business Registration Certificate
+
+2. **Proof of Ownership**:
+   - Stock Certificates
+   - Operating Agreement
+   - Partnership Agreement
+   - Shareholder Registry
+
+3. **Proof of Address**:
+   - Recent utility bill
+   - Bank statement
+   - Lease agreement
+   - Tax document
+   (Must be dated within 3 months)
+
+### Owner Documents (for each beneficial owner)
+
+1. **Government-issued ID**: Passport, national ID card, or driver's license
+2. **Proof of Address**: Recent utility bill, bank statement, rental agreement, tax document, or government correspondence
+
+## Beneficial Ownership Requirements
+
+You must provide information for:
+
+1. **All individuals** who own 25% or more of the business
+2. **At least one controlling person** who has significant control over the business (even if ownership is less than 25%)
+
+For each owner, specify their role:
+- **beneficial_controlling**: Owns 25%+ AND has control
+- **beneficial_owner**: Owns 25%+ but may not have control
+- **controlling_person**: Has control but may own less than 25%
+
+## Transaction Limits
+
+Business receivers typically have higher default transaction limits than individual receivers. To increase limits beyond the default, use the `requestLimitIncrease` method with supporting documentation such as:
+
+- Business bank statements
+- Financial statements
+- Business tax returns

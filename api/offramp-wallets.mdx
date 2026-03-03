@@ -1,0 +1,178 @@
+---
+title: "Offramp Wallets"
+description: "Manage offramp wallets for converting crypto to fiat"
+---
+
+## List Offramp Wallets
+
+Retrieve all offramp wallets for a specific bank account.
+
+```typescript
+const response = await blindpay.offrampWallets.list({
+  receiver_id: "rcv_123",
+  bank_account_id: "bank_123"
+});
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="bank_account_id" type="string" required>
+  The unique identifier of the bank account
+</ParamField>
+
+<ResponseField name="data" type="array">
+  Array of offramp wallet objects
+  
+  <Expandable title="Offramp Wallet Object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the offramp wallet
+    </ResponseField>
+    
+    <ResponseField name="external_id" type="string">
+      External identifier for the wallet
+    </ResponseField>
+    
+    <ResponseField name="instance_id" type="string">
+      ID of the BlindPay instance
+    </ResponseField>
+    
+    <ResponseField name="receiver_id" type="string">
+      ID of the receiver who owns this wallet
+    </ResponseField>
+    
+    <ResponseField name="bank_account_id" type="string">
+      ID of the associated bank account
+    </ResponseField>
+    
+    <ResponseField name="network" type="'tron'">
+      Blockchain network (currently only supports Tron)
+    </ResponseField>
+    
+    <ResponseField name="address" type="string">
+      The wallet address on the blockchain
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the wallet was created
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of when the wallet was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Create Offramp Wallet
+
+Create a new offramp wallet linked to a bank account.
+
+```typescript
+const response = await blindpay.offrampWallets.create({
+  receiver_id: "rcv_123",
+  bank_account_id: "bank_123",
+  external_id: "ext_wallet_123",
+  network: "tron"
+});
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="bank_account_id" type="string" required>
+  The unique identifier of the bank account to link
+</ParamField>
+
+<ParamField path="external_id" type="string" required>
+  Your external identifier for this wallet
+</ParamField>
+
+<ParamField path="network" type="'tron'" required>
+  Blockchain network (currently only "tron" is supported)
+</ParamField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Response Object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the created offramp wallet
+    </ResponseField>
+    
+    <ResponseField name="external_id" type="string">
+      External identifier for the wallet
+    </ResponseField>
+    
+    <ResponseField name="network" type="'tron'">
+      Blockchain network
+    </ResponseField>
+    
+    <ResponseField name="address" type="string">
+      The generated wallet address on the blockchain
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Get Offramp Wallet
+
+Retrieve a specific offramp wallet by ID.
+
+```typescript
+const response = await blindpay.offrampWallets.get({
+  receiver_id: "rcv_123",
+  bank_account_id: "bank_123",
+  id: "offramp_wallet_123"
+});
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="bank_account_id" type="string" required>
+  The unique identifier of the bank account
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the offramp wallet
+</ParamField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Offramp Wallet Object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the offramp wallet
+    </ResponseField>
+    
+    <ResponseField name="external_id" type="string">
+      External identifier for the wallet
+    </ResponseField>
+    
+    <ResponseField name="instance_id" type="string">
+      ID of the BlindPay instance
+    </ResponseField>
+    
+    <ResponseField name="receiver_id" type="string">
+      ID of the receiver who owns this wallet
+    </ResponseField>
+    
+    <ResponseField name="bank_account_id" type="string">
+      ID of the associated bank account
+    </ResponseField>
+    
+    <ResponseField name="network" type="'tron'">
+      Blockchain network (currently only supports Tron)
+    </ResponseField>
+    
+    <ResponseField name="address" type="string">
+      The wallet address on the blockchain
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp of when the wallet was created
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of when the wallet was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>

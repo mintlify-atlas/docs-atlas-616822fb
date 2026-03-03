@@ -1,0 +1,919 @@
+---
+title: Bank Accounts
+description: Manage bank accounts for receivers to enable payouts
+---
+
+Bank accounts are the destination accounts where receivers can receive payouts. Each receiver can have multiple bank accounts across different payment rails.
+
+## Supported Payment Rails
+
+BlindPay supports the following payment rails:
+
+- **ACH** - US Automated Clearing House transfers
+- **Wire** - US domestic wire transfers
+- **RTP** - US Real-Time Payments
+- **PIX** - Brazilian instant payments
+- **SPEI** - Mexican electronic funds transfer
+- **Argentina Transfers** - Argentina bank transfers (CVU, CBU, ALIAS)
+- **Colombia ACH** - Colombian ACH transfers
+- **International SWIFT** - International wire transfers
+
+---
+
+## List Bank Accounts
+
+Retrieve all bank accounts for a receiver.
+
+```typescript
+const response = await blindpay.bankAccounts.list("rcv_123abc");
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(response.data.data); // Array of bank accounts
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array" required>
+  Array of bank account objects
+  
+  <Expandable title="Bank Account Object">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the bank account
+    </ResponseField>
+    
+    <ResponseField name="type" type="string" required>
+      Payment rail type: `"ach"`, `"wire"`, `"rtp"`, `"pix"`, `"spei_bitso"`, `"transfers_bitso"`, `"ach_cop_bitso"`, or `"international_swift"`
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Custom name for this bank account
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string" required>
+      ISO 8601 timestamp of creation
+    </ResponseField>
+    
+    <ResponseField name="beneficiary_name" type="string">
+      Name of the account beneficiary (ACH, Wire, SPEI, Argentina Transfers)
+    </ResponseField>
+    
+    <ResponseField name="routing_number" type="string">
+      Bank routing number (ACH, Wire, RTP)
+    </ResponseField>
+    
+    <ResponseField name="account_number" type="string">
+      Bank account number (ACH, Wire, RTP)
+    </ResponseField>
+    
+    <ResponseField name="account_type" type="string">
+      Account type: `"checking"` or `"saving"` (ACH, Colombia ACH)
+    </ResponseField>
+    
+    <ResponseField name="account_class" type="string">
+      Account class: `"individual"` or `"business"` (ACH)
+    </ResponseField>
+    
+    <ResponseField name="address_line_1" type="string">
+      First line of address (Wire, RTP, SWIFT)
+    </ResponseField>
+    
+    <ResponseField name="address_line_2" type="string">
+      Second line of address (Wire, RTP, SWIFT)
+    </ResponseField>
+    
+    <ResponseField name="city" type="string">
+      City (Wire, RTP, SWIFT)
+    </ResponseField>
+    
+    <ResponseField name="state_province_region" type="string">
+      State, province, or region (Wire, RTP, SWIFT)
+    </ResponseField>
+    
+    <ResponseField name="country" type="string">
+      Two-letter ISO country code (Wire, RTP, SWIFT)
+    </ResponseField>
+    
+    <ResponseField name="postal_code" type="string">
+      Postal or ZIP code (Wire, RTP, SWIFT)
+    </ResponseField>
+    
+    <ResponseField name="pix_key" type="string">
+      PIX key (email, phone, CPF, or random key) - PIX only
+    </ResponseField>
+    
+    <ResponseField name="spei_protocol" type="string">
+      SPEI protocol - SPEI only
+    </ResponseField>
+    
+    <ResponseField name="spei_institution_code" type="string">
+      SPEI institution code - SPEI only
+    </ResponseField>
+    
+    <ResponseField name="spei_clabe" type="string">
+      18-digit CLABE number - SPEI only
+    </ResponseField>
+    
+    <ResponseField name="transfers_type" type="string">
+      Transfer type: `"CVU"`, `"CBU"`, or `"ALIAS"` - Argentina Transfers only
+    </ResponseField>
+    
+    <ResponseField name="transfers_account" type="string">
+      Transfer account identifier - Argentina Transfers only
+    </ResponseField>
+    
+    <ResponseField name="ach_cop_beneficiary_first_name" type="string">
+      Beneficiary first name - Colombia ACH only
+    </ResponseField>
+    
+    <ResponseField name="ach_cop_beneficiary_last_name" type="string">
+      Beneficiary last name - Colombia ACH only
+    </ResponseField>
+    
+    <ResponseField name="ach_cop_document_id" type="string">
+      Document ID number - Colombia ACH only
+    </ResponseField>
+    
+    <ResponseField name="ach_cop_document_type" type="string">
+      Document type: `"CC"`, `"CE"`, `"NIT"`, `"PASS"`, or `"PEP"` - Colombia ACH only
+    </ResponseField>
+    
+    <ResponseField name="ach_cop_email" type="string">
+      Beneficiary email - Colombia ACH only
+    </ResponseField>
+    
+    <ResponseField name="ach_cop_bank_code" type="string">
+      Bank code - Colombia ACH only
+    </ResponseField>
+    
+    <ResponseField name="ach_cop_bank_account" type="string">
+      Bank account number - Colombia ACH only
+    </ResponseField>
+    
+    <ResponseField name="swift_code_bic" type="string">
+      SWIFT/BIC code - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_account_holder_name" type="string">
+      Account holder name - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_account_number_iban" type="string">
+      Account number or IBAN - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_beneficiary_address_line_1" type="string">
+      Beneficiary address line 1 - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_beneficiary_address_line_2" type="string">
+      Beneficiary address line 2 - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_beneficiary_country" type="string">
+      Beneficiary country code - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_beneficiary_city" type="string">
+      Beneficiary city - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_beneficiary_state_province_region" type="string">
+      Beneficiary state/province/region - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_beneficiary_postal_code" type="string">
+      Beneficiary postal code - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_bank_name" type="string">
+      Bank name - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_bank_address_line_1" type="string">
+      Bank address line 1 - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_bank_address_line_2" type="string">
+      Bank address line 2 - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_bank_country" type="string">
+      Bank country code - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_bank_city" type="string">
+      Bank city - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_bank_state_province_region" type="string">
+      Bank state/province/region - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_bank_postal_code" type="string">
+      Bank postal code - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_intermediary_bank_swift_code_bic" type="string">
+      Intermediary bank SWIFT/BIC code - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_intermediary_bank_account_number_iban" type="string">
+      Intermediary bank account number/IBAN - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_intermediary_bank_name" type="string">
+      Intermediary bank name - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="swift_intermediary_bank_country" type="string">
+      Intermediary bank country code - International SWIFT only
+    </ResponseField>
+    
+    <ResponseField name="tron_wallet_hash" type="string">
+      TRON wallet address for crypto offramp
+    </ResponseField>
+    
+    <ResponseField name="offramp_wallets" type="array">
+      Array of offramp wallet configurations
+      
+      <Expandable title="Offramp Wallet">
+        <ResponseField name="id" type="string" required>
+          Wallet ID
+        </ResponseField>
+        
+        <ResponseField name="address" type="string" required>
+          Wallet address
+        </ResponseField>
+        
+        <ResponseField name="network" type="string" required>
+          Network: `"tron"`
+        </ResponseField>
+        
+        <ResponseField name="external_id" type="string" required>
+          External identifier
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Get Bank Account
+
+Retrieve a specific bank account.
+
+```typescript
+const response = await blindpay.bankAccounts.get({
+  receiver_id: "rcv_123abc",
+  id: "ba_456def"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(response.data);
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the bank account
+</ParamField>
+
+### Response
+
+Returns a single bank account object with the structure described in the List Bank Accounts response.
+
+---
+
+## Delete Bank Account
+
+Delete a bank account from a receiver. This action cannot be undone.
+
+```typescript
+const response = await blindpay.bankAccounts.delete({
+  receiver_id: "rcv_123abc",
+  id: "ba_456def"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("Bank account deleted successfully");
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the bank account to delete
+</ParamField>
+
+### Response
+
+Returns an empty success response if the deletion was successful.
+
+---
+
+## Create ACH Bank Account
+
+Create a US ACH bank account for a receiver.
+
+```typescript
+const response = await blindpay.bankAccounts.createAch({
+  receiver_id: "rcv_123abc",
+  name: "Primary Checking",
+  beneficiary_name: "John Doe",
+  routing_number: "021000021",
+  account_number: "1234567890",
+  account_type: "checking",
+  account_class: "individual"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("ACH account created:", response.data.id);
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Custom name for this bank account
+</ParamField>
+
+<ParamField body="beneficiary_name" type="string" required>
+  Name on the bank account
+</ParamField>
+
+<ParamField body="routing_number" type="string" required>
+  9-digit ABA routing number
+</ParamField>
+
+<ParamField body="account_number" type="string" required>
+  Bank account number
+</ParamField>
+
+<ParamField body="account_type" type="string" required>
+  Type of account: `"checking"` or `"saving"`
+</ParamField>
+
+<ParamField body="account_class" type="string" required>
+  Class of account: `"individual"` or `"business"`
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the created ACH bank account
+</ResponseField>
+
+<ResponseField name="type" type="string" required>
+  Always `"ach"`
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Custom name for this bank account
+</ResponseField>
+
+<ResponseField name="beneficiary_name" type="string" required>
+  Name on the bank account
+</ResponseField>
+
+<ResponseField name="routing_number" type="string" required>
+  Routing number
+</ResponseField>
+
+<ResponseField name="account_number" type="string" required>
+  Account number
+</ResponseField>
+
+<ResponseField name="account_type" type="string" required>
+  Account type
+</ResponseField>
+
+<ResponseField name="account_class" type="string" required>
+  Account class
+</ResponseField>
+
+<ResponseField name="created_at" type="string" required>
+  ISO 8601 timestamp of creation
+</ResponseField>
+
+---
+
+## Create Wire Bank Account
+
+Create a US domestic wire transfer bank account.
+
+```typescript
+const response = await blindpay.bankAccounts.createWire({
+  receiver_id: "rcv_123abc",
+  name: "Business Wire Account",
+  beneficiary_name: "Acme Corporation",
+  routing_number: "021000021",
+  account_number: "9876543210",
+  address_line_1: "123 Business St",
+  address_line_2: "Suite 100",
+  city: "New York",
+  state_province_region: "NY",
+  country: "US",
+  postal_code: "10001"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("Wire account created:", response.data.id);
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Custom name for this bank account
+</ParamField>
+
+<ParamField body="beneficiary_name" type="string" required>
+  Name on the bank account
+</ParamField>
+
+<ParamField body="routing_number" type="string" required>
+  9-digit ABA routing number
+</ParamField>
+
+<ParamField body="account_number" type="string" required>
+  Bank account number
+</ParamField>
+
+<ParamField body="address_line_1" type="string" required>
+  First line of beneficiary address
+</ParamField>
+
+<ParamField body="address_line_2" type="string">
+  Second line of beneficiary address
+</ParamField>
+
+<ParamField body="city" type="string" required>
+  City
+</ParamField>
+
+<ParamField body="state_province_region" type="string" required>
+  State or region (two-letter state code for US)
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  Two-letter ISO country code (typically "US")
+</ParamField>
+
+<ParamField body="postal_code" type="string" required>
+  ZIP or postal code
+</ParamField>
+
+### Response
+
+Returns a wire bank account object with `type: "wire"` and all provided fields.
+
+---
+
+## Create RTP Bank Account
+
+Create a Real-Time Payments (RTP) bank account.
+
+```typescript
+const response = await blindpay.bankAccounts.createRtp({
+  receiver_id: "rcv_123abc",
+  name: "RTP Account",
+  beneficiary_name: "Jane Smith",
+  routing_number: "021000021",
+  account_number: "5555555555",
+  address_line_1: "456 Main Ave",
+  city: "Boston",
+  state_province_region: "MA",
+  country: "US",
+  postal_code: "02101"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("RTP account created:", response.data.id);
+}
+```
+
+### Parameters
+
+RTP accounts use the same parameters as Wire accounts.
+
+### Response
+
+Returns an RTP bank account object with `type: "rtp"` and all provided fields.
+
+---
+
+## Create PIX Bank Account
+
+Create a Brazilian PIX instant payment account.
+
+```typescript
+const response = await blindpay.bankAccounts.createPix({
+  receiver_id: "rcv_123abc",
+  name: "PIX Account",
+  pix_key: "joao.silva@example.com" // Can be email, phone, CPF, or random key
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("PIX account created:", response.data.id);
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Custom name for this PIX account
+</ParamField>
+
+<ParamField body="pix_key" type="string" required>
+  PIX key - can be:
+  - Email address
+  - Phone number (format: +5511999999999)
+  - CPF/CNPJ (Brazilian tax ID)
+  - Random key (UUID)
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the created PIX account
+</ResponseField>
+
+<ResponseField name="type" type="string" required>
+  Always `"pix"`
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Custom name
+</ResponseField>
+
+<ResponseField name="pix_key" type="string" required>
+  PIX key
+</ResponseField>
+
+<ResponseField name="created_at" type="string" required>
+  ISO 8601 timestamp
+</ResponseField>
+
+---
+
+## Create SPEI Bank Account
+
+Create a Mexican SPEI electronic transfer account.
+
+```typescript
+const response = await blindpay.bankAccounts.createSpei({
+  receiver_id: "rcv_123abc",
+  name: "SPEI Account",
+  beneficiary_name: "María García",
+  spei_clabe: "012345678901234567",
+  spei_institution_code: "012",
+  spei_protocol: "STP"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("SPEI account created:", response.data.id);
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Custom name for this SPEI account
+</ParamField>
+
+<ParamField body="beneficiary_name" type="string" required>
+  Name on the bank account
+</ParamField>
+
+<ParamField body="spei_clabe" type="string" required>
+  18-digit CLABE (Clave Bancaria Estandarizada) number
+</ParamField>
+
+<ParamField body="spei_institution_code" type="string" required>
+  3-digit bank institution code
+</ParamField>
+
+<ParamField body="spei_protocol" type="string" required>
+  SPEI protocol type (e.g., "STP")
+</ParamField>
+
+### Response
+
+Returns a SPEI bank account object with `type: "spei_bitso"` and all provided fields.
+
+---
+
+## Create Argentina Transfers Bank Account
+
+Create an Argentina bank transfer account (CVU, CBU, or ALIAS).
+
+```typescript
+const response = await blindpay.bankAccounts.createArgentinaTransfers({
+  receiver_id: "rcv_123abc",
+  name: "Argentina Account",
+  beneficiary_name: "Carlos Rodriguez",
+  transfers_type: "CVU",
+  transfers_account: "0000003100010000000001"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("Argentina account created:", response.data.id);
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Custom name for this account
+</ParamField>
+
+<ParamField body="beneficiary_name" type="string" required>
+  Name on the account
+</ParamField>
+
+<ParamField body="transfers_type" type="string" required>
+  Type of transfer:
+  - `"CVU"` - Clave Virtual Uniforme (virtual account)
+  - `"CBU"` - Clave Bancaria Uniforme (bank account)
+  - `"ALIAS"` - Account alias
+</ParamField>
+
+<ParamField body="transfers_account" type="string" required>
+  Account identifier (CVU, CBU number, or alias)
+</ParamField>
+
+### Response
+
+Returns an Argentina transfers account object with `type: "transfers_bitso"` and all provided fields.
+
+---
+
+## Create Colombia ACH Bank Account
+
+Create a Colombian ACH transfer account.
+
+```typescript
+const response = await blindpay.bankAccounts.createColombiaAch({
+  receiver_id: "rcv_123abc",
+  name: "Colombia ACH Account",
+  account_type: "checking",
+  ach_cop_beneficiary_first_name: "Juan",
+  ach_cop_beneficiary_last_name: "Pérez",
+  ach_cop_document_type: "CC",
+  ach_cop_document_id: "1234567890",
+  ach_cop_email: "juan.perez@example.com",
+  ach_cop_bank_code: "001",
+  ach_cop_bank_account: "12345678901234567890"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("Colombia ACH account created:", response.data.id);
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Custom name for this account
+</ParamField>
+
+<ParamField body="account_type" type="string" required>
+  Type of account: `"checking"` or `"saving"`
+</ParamField>
+
+<ParamField body="ach_cop_beneficiary_first_name" type="string" required>
+  Beneficiary's first name
+</ParamField>
+
+<ParamField body="ach_cop_beneficiary_last_name" type="string" required>
+  Beneficiary's last name
+</ParamField>
+
+<ParamField body="ach_cop_document_type" type="string" required>
+  Type of identification document:
+  - `"CC"` - Cédula de Ciudadanía (citizenship card)
+  - `"CE"` - Cédula de Extranjería (foreign ID)
+  - `"NIT"` - Tax identification number
+  - `"PASS"` - Passport
+  - `"PEP"` - Special permit
+</ParamField>
+
+<ParamField body="ach_cop_document_id" type="string" required>
+  Document ID number
+</ParamField>
+
+<ParamField body="ach_cop_email" type="string" required>
+  Beneficiary's email address
+</ParamField>
+
+<ParamField body="ach_cop_bank_code" type="string" required>
+  Bank code
+</ParamField>
+
+<ParamField body="ach_cop_bank_account" type="string" required>
+  Bank account number
+</ParamField>
+
+### Response
+
+Returns a Colombia ACH account object with `type: "ach_cop_bitso"` and all provided fields.
+
+---
+
+## Create International SWIFT Bank Account
+
+Create an international wire transfer account using SWIFT.
+
+```typescript
+const response = await blindpay.bankAccounts.createInternationalSwift({
+  receiver_id: "rcv_123abc",
+  name: "International SWIFT Account",
+  swift_code_bic: "DEUTDEFF",
+  swift_account_holder_name: "Hans Mueller",
+  swift_account_number_iban: "DE89370400440532013000",
+  swift_beneficiary_address_line_1: "Hauptstraße 123",
+  swift_beneficiary_city: "Berlin",
+  swift_beneficiary_country: "DE",
+  swift_beneficiary_state_province_region: "Berlin",
+  swift_beneficiary_postal_code: "10115",
+  swift_bank_name: "Deutsche Bank",
+  swift_bank_address_line_1: "Taunusanlage 12",
+  swift_bank_city: "Frankfurt",
+  swift_bank_country: "DE",
+  swift_bank_state_province_region: "Hesse",
+  swift_bank_postal_code: "60325",
+  swift_intermediary_bank_swift_code_bic: null,
+  swift_intermediary_bank_account_number_iban: null,
+  swift_intermediary_bank_name: null,
+  swift_intermediary_bank_country: null
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("International SWIFT account created:", response.data.id);
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Custom name for this account
+</ParamField>
+
+<ParamField body="swift_code_bic" type="string" required>
+  SWIFT code or BIC of the beneficiary bank (8 or 11 characters)
+</ParamField>
+
+<ParamField body="swift_account_holder_name" type="string" required>
+  Name of the account holder
+</ParamField>
+
+<ParamField body="swift_account_number_iban" type="string" required>
+  Account number or IBAN
+</ParamField>
+
+#### Beneficiary Information
+
+<ParamField body="swift_beneficiary_address_line_1" type="string" required>
+  First line of beneficiary address
+</ParamField>
+
+<ParamField body="swift_beneficiary_address_line_2" type="string">
+  Second line of beneficiary address
+</ParamField>
+
+<ParamField body="swift_beneficiary_city" type="string" required>
+  Beneficiary city
+</ParamField>
+
+<ParamField body="swift_beneficiary_country" type="string" required>
+  Two-letter ISO country code
+</ParamField>
+
+<ParamField body="swift_beneficiary_state_province_region" type="string" required>
+  Beneficiary state, province, or region
+</ParamField>
+
+<ParamField body="swift_beneficiary_postal_code" type="string" required>
+  Beneficiary postal code
+</ParamField>
+
+#### Bank Information
+
+<ParamField body="swift_bank_name" type="string" required>
+  Name of the beneficiary bank
+</ParamField>
+
+<ParamField body="swift_bank_address_line_1" type="string" required>
+  First line of bank address
+</ParamField>
+
+<ParamField body="swift_bank_address_line_2" type="string">
+  Second line of bank address
+</ParamField>
+
+<ParamField body="swift_bank_city" type="string" required>
+  Bank city
+</ParamField>
+
+<ParamField body="swift_bank_country" type="string" required>
+  Two-letter ISO country code of bank
+</ParamField>
+
+<ParamField body="swift_bank_state_province_region" type="string" required>
+  Bank state, province, or region
+</ParamField>
+
+<ParamField body="swift_bank_postal_code" type="string" required>
+  Bank postal code
+</ParamField>
+
+#### Intermediary Bank (Optional)
+
+Required for some international transfers where a correspondent bank is needed.
+
+<ParamField body="swift_intermediary_bank_swift_code_bic" type="string | null" required>
+  SWIFT/BIC code of intermediary bank
+</ParamField>
+
+<ParamField body="swift_intermediary_bank_account_number_iban" type="string | null" required>
+  Account number at intermediary bank
+</ParamField>
+
+<ParamField body="swift_intermediary_bank_name" type="string | null" required>
+  Name of intermediary bank
+</ParamField>
+
+<ParamField body="swift_intermediary_bank_country" type="string | null" required>
+  Two-letter ISO country code of intermediary bank
+</ParamField>
+
+### Response
+
+Returns an international SWIFT account object with `type: "international_swift"` and all provided fields.

@@ -1,0 +1,606 @@
+---
+title: Webhooks
+description: Understanding webhook events and how to receive real-time notifications from BlindPay
+---
+
+## What are Webhooks?
+
+Webhooks enable BlindPay to send real-time notifications to your application when events occur. Instead of polling the API to check if something changed, BlindPay proactively sends HTTP POST requests to your webhook endpoint whenever important events happen.
+
+This is essential for:
+- Tracking payout and payin status changes
+- Receiving notifications when receivers complete KYC verification
+- Getting notified when new bank accounts are added
+- Monitoring partner fee transactions
+- Tracking Terms of Service acceptances
+
+## How Webhooks Work
+
+1. You create a webhook endpoint (URL) in your application that can receive POST requests
+2. You register this endpoint with BlindPay and specify which events you want to receive
+3. When an event occurs (e.g., a payout completes), BlindPay sends a POST request to your endpoint
+4. Your application receives the event, verifies the signature, and processes it
+5. Your application responds with a 200 status code to acknowledge receipt
+
+## Available Webhook Events
+
+BlindPay supports the following webhook events:
+
+### Receiver Events
+
+- `receiver.new` - A new receiver has been created
+- `receiver.update` - A receiver's information has been updated (including KYC status changes)
+
+### Bank Account Events
+
+- `bankAccount.new` - A new bank account has been added to a receiver
+
+### Payout Events
+
+- `payout.new` - A new payout has been created
+- `payout.update` - A payout's status has changed
+- `payout.complete` - A payout has been completed successfully
+- `payout.partnerFee` - A partner fee payout has been processed
+
+### Payin Events
+
+- `payin.new` - A new payin has been created
+- `payin.update` - A payin's status has changed
+- `payin.complete` - A payin has been completed successfully
+- `payin.partnerFee` - A partner fee payin has been processed
+
+### Blockchain Wallet Events
+
+- `blockchainWallet.new` - A new blockchain wallet has been created
+
+### Terms of Service Events
+
+- `tos.accept` - A receiver has accepted Terms of Service
+
+## Creating a Webhook Endpoint
+
+### Register Your Endpoint
+
+```typescript
+const { data, error } = await blindpay.instances.webhookEndpoints.create({
+  url: "https://your-app.com/api/blindpay/webhooks",
+  events: [
+    "payout.new",
+    "payout.update",
+    "payout.complete",
+    "receiver.update"
+  ]
+});
+
+if (data) {
+  console.log("Webhook endpoint created:", data.id);
+  // Store this ID for future reference
+}
+```
+
+### List Your Webhook Endpoints
+
+```typescript
+const { data, error } = await blindpay.instances.webhookEndpoints.list();
+
+if (data) {
+  data.forEach(endpoint => {
+    console.log(`Endpoint ${endpoint.id}:`);
+    console.log(`  URL: ${endpoint.url}`);
+    console.log(`  Events: ${endpoint.events.join(", ")}`);
+    console.log(`  Last event: ${endpoint.last_event_at}`);
+  });
+}
+```
+
+### Get Your Webhook Secret
+
+Every webhook endpoint has a secret key used to sign webhook payloads:
+
+```typescript
+const { data, error } = await blindpay.instances.webhookEndpoints.getSecret(
+  "we_abc123"
+);
+
+if (data) {
+  console.log("Webhook secret:", data.key);
+  // Store this securely - you'll need it to verify webhook signatures
+}
+```
+
+<Warning>
+Store your webhook secret securely! Never commit it to version control or expose it in client-side code. Treat it like a password.
+</Warning>
+
+### Delete a Webhook Endpoint
+
+```typescript
+const { data, error } = await blindpay.instances.webhookEndpoints.delete(
+  "we_abc123"
+);
+
+if (!error) {
+  console.log("Webhook endpoint deleted");
+}
+```
+
+## Implementing Your Webhook Handler
+
+### Node.js / Express Example
+
+```typescript
+import express from 'express';
+import { BlindPay } from 'blindpay-node-sdk';
+
+const app = express();
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY!,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID!
+});
+
+app.post('/api/blindpay/webhooks', 
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const signature = req.headers['svix-signature'] as string;
+    const id = req.headers['svix-id'] as string;
+    const timestamp = req.headers['svix-timestamp'] as string;
+    const body = req.body.toString();
+
+    // Verify the webhook signature
+    const isValid = blindpay.verifyWebhookSignature({
+      secret: process.env.BLINDPAY_WEBHOOK_SECRET!,
+      headers: {
+        id,
+        timestamp,
+        signature
+      },
+      payload: body
+    });
+
+    if (!isValid) {
+      console.error('Invalid webhook signature');
+      return res.status(401).json({ error: 'Invalid signature' });
+    }
+
+    // Parse the event
+    const event = JSON.parse(body);
+    
+    // Handle the event
+    try {
+      await handleWebhookEvent(event);
+      res.status(200).json({ received: true });
+    } catch (error) {
+      console.error('Error processing webhook:', error);
+      res.status(500).json({ error: 'Processing failed' });
+    }
+  }
+);
+
+const handleWebhookEvent = async (event: any) => {
+  switch (event.type) {
+    case 'payout.complete':
+      await handlePayoutComplete(event.data);
+      break;
+    
+    case 'payout.update':
+      await handlePayoutUpdate(event.data);
+      break;
+    
+    case 'receiver.update':
+      await handleReceiverUpdate(event.data);
+      break;
+    
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
+  }
+};
+
+const handlePayoutComplete = async (payout: any) => {
+  console.log(`Payout ${payout.id} completed`);
+  // Update your database
+  // Send notification to user
+  // etc.
+};
+
+const handlePayoutUpdate = async (payout: any) => {
+  console.log(`Payout ${payout.id} status: ${payout.status}`);
+  // Update your database
+};
+
+const handleReceiverUpdate = async (receiver: any) => {
+  console.log(`Receiver ${receiver.id} KYC status: ${receiver.kyc_status}`);
+  // Notify user if KYC is approved/rejected
+};
+```
+
+### Next.js API Route Example
+
+```typescript
+// app/api/blindpay/webhooks/route.ts
+import { BlindPay } from 'blindpay-node-sdk';
+import { NextRequest, NextResponse } from 'next/server';
+
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY!,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID!
+});
+
+export async function POST(req: NextRequest) {
+  const body = await req.text();
+  const signature = req.headers.get('svix-signature')!;
+  const id = req.headers.get('svix-id')!;
+  const timestamp = req.headers.get('svix-timestamp')!;
+
+  // Verify signature
+  const isValid = blindpay.verifyWebhookSignature({
+    secret: process.env.BLINDPAY_WEBHOOK_SECRET!,
+    headers: { id, timestamp, signature },
+    payload: body
+  });
+
+  if (!isValid) {
+    return NextResponse.json(
+      { error: 'Invalid signature' },
+      { status: 401 }
+    );
+  }
+
+  const event = JSON.parse(body);
+
+  // Handle the event
+  switch (event.type) {
+    case 'payout.complete':
+      // Your logic here
+      console.log('Payout completed:', event.data.id);
+      break;
+    
+    case 'receiver.update':
+      // Your logic here
+      console.log('Receiver updated:', event.data.id);
+      break;
+  }
+
+  return NextResponse.json({ received: true });
+}
+```
+
+## Webhook Signature Verification
+
+BlindPay signs all webhook payloads using Svix. Always verify signatures to ensure the webhook came from BlindPay:
+
+```typescript
+const isValid = blindpay.verifyWebhookSignature({
+  secret: "your_webhook_secret",
+  headers: {
+    id: "msg_abc123",
+    timestamp: "1234567890",
+    signature: "v1,signature_here"
+  },
+  payload: "{\"type\":\"payout.complete\",\"data\":{...}}"
+});
+
+if (!isValid) {
+  throw new Error("Invalid webhook signature - possible tampering");
+}
+```
+
+The `verifyWebhookSignature` method:
+- Returns `true` if the signature is valid
+- Returns `false` if the signature is invalid or verification fails
+- Never throws exceptions
+
+<Warning>
+NEVER process a webhook without verifying its signature. Attackers could send fake webhooks to manipulate your application.
+</Warning>
+
+## Webhook Event Payload Structure
+
+Each webhook has a consistent structure:
+
+```typescript
+type WebhookEvent = {
+  type: WebhookEvents;
+  data: any; // The resource that changed (payout, receiver, etc.)
+  created_at: string;
+};
+```
+
+Example payout.complete event:
+
+```json
+{
+  "type": "payout.complete",
+  "data": {
+    "id": "po_abc123",
+    "status": "completed",
+    "receiver_id": "re_xyz789",
+    "sender_amount": 1000,
+    "receiver_amount": 4850,
+    "currency": "BRL",
+    "tracking_complete": {
+      "step": "completed",
+      "status": "paid",
+      "transaction_hash": "0x123...",
+      "completed_at": "2024-01-15T10:30:00Z"
+    }
+  },
+  "created_at": "2024-01-15T10:30:00Z"
+}
+```
+
+## Webhook Best Practices
+
+### 1. Respond Quickly
+
+Your webhook handler should respond with 200 as quickly as possible. Process heavy workloads asynchronously:
+
+```typescript
+app.post('/webhooks', async (req, res) => {
+  // Verify signature
+  const isValid = verifySignature(req);
+  if (!isValid) {
+    return res.status(401).send();
+  }
+
+  // Acknowledge immediately
+  res.status(200).json({ received: true });
+
+  // Process asynchronously
+  const event = req.body;
+  processWebhookAsync(event).catch(err => {
+    console.error('Async webhook processing failed:', err);
+  });
+});
+
+const processWebhookAsync = async (event: any) => {
+  // Heavy database operations
+  // External API calls
+  // Email notifications
+  // etc.
+};
+```
+
+### 2. Handle Duplicate Events
+
+BlindPay may send the same event multiple times. Make your webhook handler idempotent:
+
+```typescript
+const handlePayoutComplete = async (payout: any) => {
+  // Check if already processed
+  const existing = await db.webhookEvents.findOne({
+    event_id: payout.id,
+    event_type: 'payout.complete'
+  });
+
+  if (existing) {
+    console.log('Event already processed, skipping');
+    return;
+  }
+
+  // Process the event
+  await db.payouts.update({ id: payout.id }, { status: 'completed' });
+
+  // Mark as processed
+  await db.webhookEvents.insert({
+    event_id: payout.id,
+    event_type: 'payout.complete',
+    processed_at: new Date()
+  });
+};
+```
+
+### 3. Implement Retry Logic
+
+If your webhook handler fails, BlindPay will retry with exponential backoff. Handle transient failures gracefully:
+
+```typescript
+const handleWebhookEvent = async (event: any, retries = 3) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      await processEvent(event);
+      return; // Success
+    } catch (error) {
+      console.error(`Attempt ${i + 1} failed:`, error);
+      
+      if (i === retries - 1) {
+        // Final attempt failed - log to error tracking
+        await logFailedWebhook(event, error);
+        throw error;
+      }
+      
+      // Wait before retrying
+      await new Promise(resolve => 
+        setTimeout(resolve, Math.pow(2, i) * 1000)
+      );
+    }
+  }
+};
+```
+
+### 4. Log All Webhook Events
+
+Keep a record of all received webhooks for debugging and auditing:
+
+```typescript
+app.post('/webhooks', async (req, res) => {
+  const event = req.body;
+  
+  // Log the raw webhook
+  await db.webhookLogs.insert({
+    event_type: event.type,
+    payload: event,
+    received_at: new Date(),
+    headers: req.headers
+  });
+  
+  // Process
+  await handleWebhookEvent(event);
+  
+  res.status(200).json({ received: true });
+});
+```
+
+### 5. Monitor Webhook Health
+
+Track webhook processing to detect issues:
+
+```typescript
+const monitorWebhook = async (event: any, startTime: number) => {
+  const duration = Date.now() - startTime;
+  
+  // Track metrics
+  await metrics.record({
+    name: 'webhook_processing_time',
+    value: duration,
+    tags: { event_type: event.type }
+  });
+  
+  // Alert on slow processing
+  if (duration > 5000) {
+    await alerts.send({
+      message: `Slow webhook processing: ${event.type} took ${duration}ms`
+    });
+  }
+};
+```
+
+## Webhook Portal
+
+BlindPay provides a webhook management portal where you can view event logs and debug issues:
+
+```typescript
+const { data, error } = await blindpay.instances.webhookEndpoints.getPortalAccessUrl();
+
+if (data) {
+  console.log("Portal URL:", data.url);
+  // Open this URL to access the webhook portal
+}
+```
+
+The portal shows:
+- All webhook deliveries and their status
+- Request and response details
+- Retry attempts
+- Delivery failures and reasons
+
+## Testing Webhooks Locally
+
+Use tools like ngrok to expose your local server for webhook testing:
+
+```bash
+# Install ngrok
+npm install -g ngrok
+
+# Start your local server
+node server.js  # Running on http://localhost:3000
+
+# Expose it publicly
+ngrok http 3000
+# Forwarding https://abc123.ngrok.io -> http://localhost:3000
+```
+
+Then register the ngrok URL as your webhook endpoint:
+
+```typescript
+await blindpay.instances.webhookEndpoints.create({
+  url: "https://abc123.ngrok.io/api/blindpay/webhooks",
+  events: ["payout.complete"]
+});
+```
+
+## Common Use Cases
+
+### Update Order Status
+
+```typescript
+const handlePayoutComplete = async (payout: any) => {
+  // Find the order in your database
+  const order = await db.orders.findOne({ 
+    blindpay_payout_id: payout.id 
+  });
+  
+  if (order) {
+    // Update order status
+    await db.orders.update(
+      { id: order.id },
+      { 
+        status: 'paid',
+        paid_at: new Date(),
+        receiver_amount: payout.receiver_amount
+      }
+    );
+    
+    // Send confirmation email
+    await emailService.send({
+      to: order.customer_email,
+      subject: 'Payment Completed',
+      template: 'payment-confirmed',
+      data: { order, payout }
+    });
+  }
+};
+```
+
+### Notify User of KYC Status
+
+```typescript
+const handleReceiverUpdate = async (receiver: any) => {
+  // Check if KYC status changed
+  if (receiver.kyc_status === 'approved') {
+    await notificationService.send({
+      user_id: receiver.external_id,
+      title: 'Identity Verified',
+      message: 'Your identity has been verified. You can now receive payments.',
+      type: 'success'
+    });
+  } else if (receiver.kyc_status === 'rejected') {
+    await notificationService.send({
+      user_id: receiver.external_id,
+      title: 'Verification Failed',
+      message: 'We were unable to verify your identity. Please contact support.',
+      type: 'error'
+    });
+  }
+};
+```
+
+### Track Partner Fee Revenue
+
+```typescript
+const handlePayoutPartnerFee = async (event: any) => {
+  await db.revenue.insert({
+    payout_id: event.data.id,
+    partner_fee_amount: event.data.partner_fee_amount,
+    transaction_hash: event.data.tracking_partner_fee?.transaction_hash,
+    received_at: new Date()
+  });
+  
+  // Update revenue dashboard
+  await updateRevenueDashboard();
+};
+```
+
+## Troubleshooting
+
+### Webhooks Not Being Received
+
+1. Check that your endpoint URL is publicly accessible
+2. Verify your server is responding with 200 status codes
+3. Check your webhook endpoint configuration in BlindPay
+4. Review logs in the webhook portal
+
+### Signature Verification Failing
+
+1. Ensure you're using the raw request body (not parsed JSON)
+2. Verify you're using the correct webhook secret
+3. Check that headers are being passed correctly
+4. Ensure no middleware is modifying the request body
+
+### Missing Events
+
+1. Check that the event type is registered in your webhook endpoint
+2. Review the webhook portal for delivery attempts
+3. Check your server logs for processing errors
+4. Verify your endpoint is responding quickly (< 5 seconds)
+
+For additional support, access the webhook portal to view detailed delivery logs and debugging information.

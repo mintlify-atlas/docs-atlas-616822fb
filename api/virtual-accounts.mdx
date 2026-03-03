@@ -1,0 +1,228 @@
+---
+title: "Virtual Accounts"
+description: "Manage virtual bank accounts for fiat-to-crypto conversion"
+---
+
+## List Virtual Accounts
+
+Retrieve all virtual accounts for a receiver.
+
+```typescript
+const response = await blindpay.virtualAccounts.list(receiver_id);
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ResponseField name="data" type="array">
+  Array of virtual account objects
+  
+  <Expandable title="Virtual Account Object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the virtual account
+    </ResponseField>
+    
+    <ResponseField name="banking_partner" type="BankingPartner">
+      Banking partner providing the account (jpmorgan, citi, or hsbc)
+    </ResponseField>
+    
+    <ResponseField name="kyc_status" type="string">
+      KYC verification status of the account
+    </ResponseField>
+    
+    <ResponseField name="us" type="object">
+      US banking details
+      
+      <Expandable title="US Details">
+        <ResponseField name="ach" type="object">
+          ACH transfer details
+          <Expandable title="ACH">
+            <ResponseField name="routing_number" type="string">
+              ACH routing number
+            </ResponseField>
+            <ResponseField name="account_number" type="string">
+              ACH account number
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        
+        <ResponseField name="wire" type="object">
+          Wire transfer details
+          <Expandable title="Wire">
+            <ResponseField name="routing_number" type="string">
+              Wire routing number
+            </ResponseField>
+            <ResponseField name="account_number" type="string">
+              Wire account number
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        
+        <ResponseField name="rtp" type="object">
+          Real-time payment details
+          <Expandable title="RTP">
+            <ResponseField name="routing_number" type="string">
+              RTP routing number
+            </ResponseField>
+            <ResponseField name="account_number" type="string">
+              RTP account number
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        
+        <ResponseField name="swift_bic_code" type="string">
+          SWIFT/BIC code for international transfers
+        </ResponseField>
+        
+        <ResponseField name="account_type" type="string">
+          Type of bank account
+        </ResponseField>
+        
+        <ResponseField name="beneficiary" type="object">
+          Beneficiary information
+          <Expandable title="Beneficiary">
+            <ResponseField name="name" type="string">
+              Beneficiary name
+            </ResponseField>
+            <ResponseField name="address_line_1" type="string">
+              First line of beneficiary address
+            </ResponseField>
+            <ResponseField name="address_line_2" type="string">
+              Second line of beneficiary address
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+        
+        <ResponseField name="receiving_bank" type="object">
+          Receiving bank information
+          <Expandable title="Receiving Bank">
+            <ResponseField name="name" type="string">
+              Bank name
+            </ResponseField>
+            <ResponseField name="address_line_1" type="string">
+              First line of bank address
+            </ResponseField>
+            <ResponseField name="address_line_2" type="string">
+              Second line of bank address
+            </ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="token" type="StablecoinToken">
+      Stablecoin token type (USDC, USDT, or USDB)
+    </ResponseField>
+    
+    <ResponseField name="blockchain_wallet_id" type="string">
+      ID of the linked blockchain wallet
+    </ResponseField>
+    
+    <ResponseField name="blockchain_wallet" type="object | null">
+      Linked blockchain wallet details
+      <Expandable title="Blockchain Wallet">
+        <ResponseField name="network" type="Network">
+          Blockchain network
+        </ResponseField>
+        <ResponseField name="address" type="string">
+          Wallet address
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Get Virtual Account
+
+Retrieve a specific virtual account by ID.
+
+```typescript
+const response = await blindpay.virtualAccounts.get({
+  receiver_id: "rcv_123",
+  id: "va_123"
+});
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the virtual account
+</ParamField>
+
+<ResponseField name="data" type="object">
+  Virtual account object with the same structure as described in List Virtual Accounts
+</ResponseField>
+
+## Create Virtual Account
+
+Create a new virtual account linked to a blockchain wallet.
+
+```typescript
+const response = await blindpay.virtualAccounts.create({
+  receiver_id: "rcv_123",
+  banking_partner: "jpmorgan",
+  token: "USDC",
+  blockchain_wallet_id: "wallet_123",
+  signed_agreement_id: "agreement_123"
+});
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="banking_partner" type="BankingPartner" required>
+  Banking partner to use (jpmorgan, citi, or hsbc)
+</ParamField>
+
+<ParamField path="token" type="StablecoinToken" required>
+  Stablecoin token type (USDC, USDT, or USDB)
+</ParamField>
+
+<ParamField path="blockchain_wallet_id" type="string" required>
+  ID of the blockchain wallet to link
+</ParamField>
+
+<ParamField path="signed_agreement_id" type="string | null">
+  Optional ID of the signed agreement
+</ParamField>
+
+<ResponseField name="data" type="object">
+  Virtual account object with the same structure as described in List Virtual Accounts
+</ResponseField>
+
+## Update Virtual Account
+
+Update a virtual account's token and blockchain wallet configuration.
+
+```typescript
+const response = await blindpay.virtualAccounts.update({
+  receiver_id: "rcv_123",
+  id: "va_123",
+  token: "USDT",
+  blockchain_wallet_id: "wallet_456"
+});
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the virtual account to update
+</ParamField>
+
+<ParamField path="token" type="StablecoinToken" required>
+  Updated stablecoin token type (USDC, USDT, or USDB)
+</ParamField>
+
+<ParamField path="blockchain_wallet_id" type="string" required>
+  Updated blockchain wallet ID to link
+</ParamField>
+
+<ResponseField name="data" type="void">
+  No data returned on successful update
+</ResponseField>

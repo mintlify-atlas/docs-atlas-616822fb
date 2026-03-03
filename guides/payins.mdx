@@ -1,0 +1,364 @@
+---
+title: Creating Payins
+description: Complete guide for accepting inbound payments with BlindPay payins
+---
+
+Payins allow you to accept fiat-to-crypto payments from customers. This guide walks you through creating and managing payins for different payment methods and regions.
+
+## Overview
+
+A payin converts fiat currency to stablecoins and deposits them to a blockchain wallet. The flow involves:
+
+1. Creating a receiver (customer)
+2. Creating a blockchain wallet for the receiver
+3. Getting a quote for the payin
+4. Creating the payin
+5. Customer sends fiat payment
+6. BlindPay converts and transfers stablecoins
+
+## Prerequisites
+
+Before creating a payin, you need:
+
+- A BlindPay instance ID and API key
+- A receiver with completed KYC
+- A blockchain wallet registered for the receiver
+
+<Note>
+Payins support multiple payment methods including PIX (Brazil), ACH/Wire (USA), SPEI (Mexico), PSE (Colombia), and Transfers (Argentina).
+</Note>
+
+## Step 1: Create a Payin Quote
+
+<Steps>
+  <Step title="Get the quote">
+    First, create a quote to get the exchange rate and fees:
+
+    ```typescript
+    import { BlindPay } from '@blindpay/sdk';
+
+    const blindpay = new BlindPay({
+      apiKey: process.env.BLINDPAY_API_KEY,
+      instanceId: process.env.BLINDPAY_INSTANCE_ID
+    });
+
+    const { data: quote, error } = await blindpay.payins.quotes.create({
+      blockchain_wallet_id: 'bw_000000000000',
+      currency_type: 'fiat', // 'fiat' or 'crypto'
+      payment_method: 'pix', // 'pix', 'ach', 'wire', 'spei', 'pse', 'transfers'
+      request_amount: 1000, // Amount in fiat currency (BRL)
+      token: 'USDC',
+      cover_fees: false, // If true, fees are added to request_amount
+      partner_fee_id: null,
+      is_otc: false
+    });
+
+    if (error) {
+      console.error('Error creating quote:', error.message);
+      return;
+    }
+
+    console.log('Quote created:', {
+      id: quote.id,
+      sender_amount: quote.sender_amount, // Amount customer pays
+      receiver_amount: quote.receiver_amount, // USDC received
+      commercial_quotation: quote.commercial_quotation,
+      blindpay_quotation: quote.blindpay_quotation,
+      expires_at: quote.expires_at
+    });
+    ```
+
+    <Note>
+    Quotes expire after a set time. The `expires_at` field contains a Unix timestamp.
+    </Note>
+  </Step>
+
+  <Step title="Understand the quote response">
+    The quote response includes:
+
+    - `id`: Quote ID to use when creating the payin
+    - `sender_amount`: Total fiat amount the customer must pay
+    - `receiver_amount`: Stablecoins that will be received
+    - `commercial_quotation`: Market exchange rate
+    - `blindpay_quotation`: BlindPay's exchange rate (includes fees)
+    - `flat_fee`: Fixed fee in stablecoins
+    - `expires_at`: Unix timestamp when quote expires
+  </Step>
+</Steps>
+
+## Step 2: Create the Payin
+
+<Steps>
+  <Step title="Create payin with the quote">
+    Use the quote ID to create the payin:
+
+    ```typescript
+    const { data: payin, error } = await blindpay.payins.createEvm(
+      quote.id // payin_quote_id
+    );
+
+    if (error) {
+      console.error('Error creating payin:', error.message);
+      return;
+    }
+
+    console.log('Payin created:', {
+      id: payin.id,
+      status: payin.status,
+      pix_code: payin.pix_code, // For PIX payments
+      memo_code: payin.memo_code, // For USD payments
+      clabe: payin.clabe, // For SPEI payments
+      blindpay_bank_details: payin.blindpay_bank_details // For ACH/Wire
+    });
+    ```
+  </Step>
+
+  <Step title="Display payment instructions">
+    Depending on the payment method, show the appropriate payment details:
+
+    <CodeGroup>
+    ```typescript PIX (Brazil)
+    if (payin.pix_code) {
+      // Display PIX QR code or copy-paste code
+      console.log('PIX Code:', payin.pix_code);
+      // Show QR code image if needed:
+      // generateQRCode(payin.pix_code)
+    }
+    ```
+
+    ```typescript ACH/Wire (USA)
+    if (payin.blindpay_bank_details) {
+      const { ach, wire, beneficiary } = payin.blindpay_bank_details;
+      
+      console.log('ACH Details:', {
+        routing_number: ach.routing_number,
+        account_number: ach.account_number,
+        beneficiary_name: beneficiary.name
+      });
+      
+      console.log('Wire Details:', {
+        routing_number: wire.routing_number,
+        account_number: wire.account_number,
+        beneficiary_name: beneficiary.name
+      });
+    }
+    ```
+
+    ```typescript SPEI (Mexico)
+    if (payin.clabe) {
+      console.log('CLABE:', payin.clabe);
+      // Customer uses CLABE to send SPEI payment
+    }
+    ```
+
+    ```typescript Memo Code (USD)
+    if (payin.memo_code && payin.blindpay_bank_details) {
+      console.log('Memo Code:', payin.memo_code);
+      console.log('Send payment with this memo to:');
+      console.log(payin.blindpay_bank_details);
+    }
+    ```
+    </CodeGroup>
+  </Step>
+</Steps>
+
+## Step 3: Track Payin Status
+
+<Steps>
+  <Step title="Poll or use webhooks">
+    You can track payin progress by polling or setting up webhooks:
+
+    ```typescript
+    // Poll for status updates
+    const { data: updatedPayin, error } = await blindpay.payins.get(
+      payin.id
+    );
+
+    console.log('Current status:', updatedPayin.status);
+    console.log('Tracking:', {
+      transaction: updatedPayin.tracking_transaction,
+      payment: updatedPayin.tracking_payment,
+      complete: updatedPayin.tracking_complete
+    });
+    ```
+
+    <Tip>
+    For production, use webhooks instead of polling. Subscribe to `payin.update` and `payin.complete` events.
+    </Tip>
+  </Step>
+
+  <Step title="Understand tracking stages">
+    Payins go through multiple tracking stages:
+
+    - **tracking_transaction**: Customer's fiat payment received
+    - **tracking_payment**: Converting fiat to stablecoins
+    - **tracking_complete**: Stablecoins sent to blockchain wallet
+    - **tracking_partner_fee**: Partner fee payment (if applicable)
+
+    Each tracking object has:
+    - `step`: Current step status (`on_hold`, `processing`, `complete`)
+    - `completed_at`: Timestamp when this stage completed
+  </Step>
+</Steps>
+
+## Step 4: Handle Different Payment Methods
+
+<CodeGroup>
+```typescript Brazil (PIX)
+const { data: quote } = await blindpay.payins.quotes.create({
+  blockchain_wallet_id: 'bw_000000000000',
+  currency_type: 'fiat',
+  payment_method: 'pix',
+  request_amount: 5000, // BRL
+  token: 'USDC',
+  cover_fees: false,
+  partner_fee_id: null
+});
+
+const { data: payin } = await blindpay.payins.createEvm(quote.id);
+// Display payin.pix_code to customer
+```
+
+```typescript USA (ACH)
+const { data: quote } = await blindpay.payins.quotes.create({
+  blockchain_wallet_id: 'bw_000000000000',
+  currency_type: 'fiat',
+  payment_method: 'ach',
+  request_amount: 1000, // USD
+  token: 'USDC',
+  cover_fees: true, // Customer pays fees
+  partner_fee_id: null
+});
+
+const { data: payin } = await blindpay.payins.createEvm(quote.id);
+// Display payin.blindpay_bank_details.ach and payin.memo_code
+```
+
+```typescript Mexico (SPEI)
+const { data: quote } = await blindpay.payins.quotes.create({
+  blockchain_wallet_id: 'bw_000000000000',
+  currency_type: 'fiat',
+  payment_method: 'spei',
+  request_amount: 10000, // MXN
+  token: 'USDC',
+  cover_fees: false,
+  partner_fee_id: null
+});
+
+const { data: payin } = await blindpay.payins.createEvm(quote.id);
+// Display payin.clabe to customer
+```
+
+```typescript Colombia (PSE)
+const { data: quote } = await blindpay.payins.quotes.create({
+  blockchain_wallet_id: 'bw_000000000000',
+  currency_type: 'fiat',
+  payment_method: 'pse',
+  request_amount: 500000, // COP
+  token: 'USDC',
+  cover_fees: false,
+  partner_fee_id: null
+});
+
+const { data: payin } = await blindpay.payins.createEvm(quote.id);
+// Redirect customer to payin.pse_payment_link
+```
+</CodeGroup>
+
+## Listing Payins
+
+Retrieve all payins with optional filtering:
+
+```typescript
+// List all payins
+const { data: payins } = await blindpay.payins.list();
+
+// Filter by receiver
+const { data: receiverPayins } = await blindpay.payins.list({
+  receiver_id: 're_000000000000'
+});
+
+// Filter by status
+const { data: completedPayins } = await blindpay.payins.list({
+  status: 'complete'
+});
+
+// Pagination
+const { data: paginatedPayins } = await blindpay.payins.list({
+  limit: 10,
+  starting_after: 'pi_000000000000'
+});
+
+console.log('Payins:', payins.data);
+console.log('Pagination:', payins.pagination);
+```
+
+## Public Tracking
+
+Allow customers to track their payin without authentication:
+
+```typescript
+// Get public tracking info (no auth required)
+const { data: tracking } = await blindpay.payins.getTrack(
+  'pi_000000000000'
+);
+
+console.log('Public tracking:', {
+  status: tracking.status,
+  sender_amount: tracking.sender_amount,
+  receiver_amount: tracking.receiver_amount,
+  tracking_transaction: tracking.tracking_transaction,
+  tracking_payment: tracking.tracking_payment,
+  tracking_complete: tracking.tracking_complete
+});
+```
+
+<Note>
+The `getTrack` endpoint uses a different endpoint (`/e/payins/:id`) and can be called without authentication, making it safe to use in client-side applications.
+</Note>
+
+## Error Handling
+
+```typescript
+const { data: quote, error } = await blindpay.payins.quotes.create({
+  blockchain_wallet_id: 'bw_000000000000',
+  currency_type: 'fiat',
+  payment_method: 'pix',
+  request_amount: 1000,
+  token: 'USDC',
+  cover_fees: false,
+  partner_fee_id: null
+});
+
+if (error) {
+  console.error('Quote creation failed:', error.message);
+  // Handle specific error cases
+  if (error.message.includes('insufficient')) {
+    // Handle insufficient balance
+  } else if (error.message.includes('KYC')) {
+    // Handle KYC issues
+  }
+  return;
+}
+
+// Proceed with quote
+```
+
+<Warning>
+Always validate that quotes haven't expired before creating payins. Creating a payin with an expired quote will fail.
+</Warning>
+
+## Best Practices
+
+1. **Quote Management**: Create quotes just before displaying to users to minimize expiration risk
+2. **Fee Transparency**: Clearly display whether `cover_fees` is true/false and show total cost
+3. **Status Updates**: Use webhooks for real-time updates instead of polling
+4. **Payment Instructions**: Display clear, localized payment instructions for each method
+5. **Timeout Handling**: Set reasonable timeouts and notify users if payment isn't received
+6. **Public Tracking**: Share the `getTrack` endpoint with customers for self-service tracking
+
+## Next Steps
+
+- Set up [webhook verification](/guides/webhook-verification) to receive real-time updates
+- Learn about [virtual accounts](/guides/virtual-accounts) for recurring payins
+- Explore [blockchain wallets](/guides/blockchain-wallets) for managing destinations

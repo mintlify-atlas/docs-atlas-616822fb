@@ -1,0 +1,307 @@
+---
+title: "BlindPay Client"
+description: "The main BlindPay class for interacting with the BlindPay API"
+---
+
+## Constructor
+
+Create a new BlindPay client instance to interact with the BlindPay API.
+
+```typescript
+import { BlindPay } from "@blindpay/node";
+
+const blindpay = new BlindPay({
+  apiKey: "your_api_key",
+  instanceId: "your_instance_id"
+});
+```
+
+### Parameters
+
+<ParamField path="apiKey" type="string" required>
+  Your BlindPay API key. Get your API key from the BlindPay dashboard.
+</ParamField>
+
+<ParamField path="instanceId" type="string" required>
+  Your BlindPay instance ID. Get your instance ID from the BlindPay dashboard.
+</ParamField>
+
+## Resource Properties
+
+The BlindPay client provides access to various resource namespaces for different API operations.
+
+### available
+
+Access available balance and funding information.
+
+```typescript
+const { data, error } = await blindpay.available.get();
+```
+
+**Type:** `ReturnType<typeof createAvailableResource>`
+
+### partnerFees
+
+Manage partner fees configuration.
+
+```typescript
+const { data, error } = await blindpay.partnerFees.list();
+```
+
+**Type:** `ReturnType<typeof createPartnerFeesResource>`
+
+### payins
+
+Create and manage pay-ins (incoming payments).
+
+```typescript
+const { data, error } = await blindpay.payins.create({
+  amount: "100.00",
+  currency: "USD"
+});
+```
+
+**Type:** `ReturnType<typeof createPayinsResource>`
+
+#### payins.quotes
+
+Get quotes for pay-in transactions.
+
+```typescript
+const { data, error } = await blindpay.payins.quotes.create({
+  amount: "100.00",
+  currency: "USD"
+});
+```
+
+**Type:** `ReturnType<typeof createPayinQuotesResource>`
+
+### quotes
+
+Get general payment quotes.
+
+```typescript
+const { data, error } = await blindpay.quotes.create({
+  amount: "100.00",
+  sourceCurrency: "USD",
+  destinationCurrency: "EUR"
+});
+```
+
+**Type:** `ReturnType<typeof createQuotesResource>`
+
+### payouts
+
+Create and manage payouts (outgoing payments).
+
+```typescript
+const { data, error } = await blindpay.payouts.create({
+  amount: "100.00",
+  currency: "USD",
+  receiverId: "receiver_id"
+});
+```
+
+**Type:** `ReturnType<typeof createPayoutsResource>`
+
+### virtualAccounts
+
+Manage virtual accounts for receiving payments.
+
+```typescript
+const { data, error } = await blindpay.virtualAccounts.create({
+  currency: "USD"
+});
+```
+
+**Type:** `ReturnType<typeof createVirtualAccountsResource>`
+
+### receivers
+
+Manage payment receivers (beneficiaries).
+
+```typescript
+const { data, error } = await blindpay.receivers.create({
+  name: "John Doe",
+  email: "john@example.com"
+});
+```
+
+**Type:** `ReturnType<typeof createReceiversResource>`
+
+#### receivers.bankAccounts
+
+Manage bank accounts for receivers.
+
+```typescript
+const { data, error } = await blindpay.receivers.bankAccounts.create(
+  "receiver_id",
+  {
+    accountNumber: "1234567890",
+    routingNumber: "021000021"
+  }
+);
+```
+
+**Type:** `ReturnType<typeof createBankAccountsResource>`
+
+### instances
+
+Manage your BlindPay instance configuration.
+
+```typescript
+const { data, error } = await blindpay.instances.get();
+```
+
+**Type:** `ReturnType<typeof createInstancesResource>`
+
+#### instances.apiKeys
+
+Manage API keys for your instance.
+
+```typescript
+const { data, error } = await blindpay.instances.apiKeys.list();
+```
+
+**Type:** `ReturnType<typeof createApiKeysResource>`
+
+#### instances.webhookEndpoints
+
+Manage webhook endpoints for your instance.
+
+```typescript
+const { data, error } = await blindpay.instances.webhookEndpoints.create({
+  url: "https://example.com/webhooks",
+  events: ["payin.completed", "payout.completed"]
+});
+```
+
+**Type:** `ReturnType<typeof createWebhookEndpointsResource>`
+
+#### instances.tos
+
+Manage terms of service acceptance.
+
+```typescript
+const { data, error } = await blindpay.instances.tos.accept();
+```
+
+**Type:** `ReturnType<typeof createTermsOfServiceResource>`
+
+### wallets
+
+Manage cryptocurrency wallets.
+
+#### wallets.blockchain
+
+Manage blockchain wallets for direct cryptocurrency operations.
+
+```typescript
+const { data, error } = await blindpay.wallets.blockchain.create({
+  chain: "ethereum",
+  address: "0x..."
+});
+```
+
+**Type:** `ReturnType<typeof createBlockchainWalletsResource>`
+
+#### wallets.offramp
+
+Manage offramp wallets for converting cryptocurrency to fiat.
+
+```typescript
+const { data, error } = await blindpay.wallets.offramp.create({
+  currency: "USD"
+});
+```
+
+**Type:** `ReturnType<typeof createOfframpWalletsResource>`
+
+## Methods
+
+### verifyWebhookSignature()
+
+Verifies the signature of a webhook request from BlindPay using Svix.
+
+```typescript
+const isValid = blindpay.verifyWebhookSignature({
+  secret: "your_webhook_secret",
+  headers: {
+    id: req.headers["svix-id"],
+    timestamp: req.headers["svix-timestamp"],
+    signature: req.headers["svix-signature"]
+  },
+  payload: rawRequestBody
+});
+
+if (!isValid) {
+  throw new Error("Invalid webhook signature");
+}
+```
+
+#### Parameters
+
+<ParamField path="secret" type="string" required>
+  The webhook secret from your BlindPay dashboard.
+</ParamField>
+
+<ParamField path="headers" type="object" required>
+  The webhook headers object containing Svix signature components.
+  
+  <ParamField path="headers.id" type="string" required>
+    The `svix-id` header value from the webhook request.
+  </ParamField>
+  
+  <ParamField path="headers.timestamp" type="string" required>
+    The `svix-timestamp` header value from the webhook request.
+  </ParamField>
+  
+  <ParamField path="headers.signature" type="string" required>
+    The `svix-signature` header value from the webhook request.
+  </ParamField>
+</ParamField>
+
+<ParamField path="payload" type="string" required>
+  The raw request body as a string (not parsed JSON).
+</ParamField>
+
+#### Returns
+
+**Type:** `boolean`
+
+Returns `true` if the signature is valid, `false` otherwise.
+
+#### Example with Express
+
+```typescript
+import express from "express";
+import { BlindPay } from "@blindpay/node";
+
+const app = express();
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID
+});
+
+app.post("/webhooks/blindpay", express.raw({ type: "application/json" }), (req, res) => {
+  const isValid = blindpay.verifyWebhookSignature({
+    secret: process.env.BLINDPAY_WEBHOOK_SECRET,
+    headers: {
+      id: req.headers["svix-id"] as string,
+      timestamp: req.headers["svix-timestamp"] as string,
+      signature: req.headers["svix-signature"] as string
+    },
+    payload: req.body.toString()
+  });
+
+  if (!isValid) {
+    return res.status(401).json({ error: "Invalid signature" });
+  }
+
+  const event = JSON.parse(req.body.toString());
+  // Process the webhook event
+  console.log("Received event:", event);
+
+  res.status(200).json({ received: true });
+});
+```

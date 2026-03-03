@@ -1,0 +1,470 @@
+---
+title: Creating Payouts
+description: Complete guide for sending crypto-to-fiat payments with BlindPay payouts across different blockchain networks
+---
+
+Payouts allow you to convert stablecoins to fiat and send payments to bank accounts. This guide covers creating payouts across different blockchain networks including EVM chains, Stellar, and Solana.
+
+## Overview
+
+A payout converts stablecoins from a blockchain wallet to fiat currency in a recipient's bank account. The flow involves:
+
+1. Creating a receiver (recipient)
+2. Adding a bank account for the receiver
+3. Creating a quote for the payout
+4. Creating the payout (network-specific)
+5. BlindPay processes the conversion
+6. Fiat arrives in recipient's bank account
+
+## Prerequisites
+
+Before creating a payout, ensure you have:
+
+- A BlindPay instance ID and API key
+- A receiver with completed KYC/KYB
+- A bank account registered for the receiver
+- A wallet with sufficient stablecoin balance
+
+<Note>
+Payouts support multiple rails including PIX (Brazil), ACH/Wire (USA), SPEI (Mexico), ACH COP (Colombia), SWIFT, and Transfers (Argentina).
+</Note>
+
+## Step 1: Create a Payout Quote
+
+<Steps>
+  <Step title="Get the quote">
+    First, create a quote to lock in the exchange rate:
+
+    ```typescript
+    import { BlindPay } from '@blindpay/sdk';
+
+    const blindpay = new BlindPay({
+      apiKey: process.env.BLINDPAY_API_KEY,
+      instanceId: process.env.BLINDPAY_INSTANCE_ID
+    });
+
+    const { data: quote, error } = await blindpay.quotes.create({
+      bank_account_id: 'ba_000000000000',
+      currency_type: 'fiat', // Amount specified in fiat
+      cover_fees: false, // If true, fees deducted from request_amount
+      request_amount: 1000, // Amount in fiat (e.g., BRL)
+      network: 'polygon',
+      token: 'USDC',
+      description: 'Payment for services',
+      partner_fee_id: null,
+      transaction_document_file: null, // Base64 encoded document
+      transaction_document_id: null,
+      transaction_document_type: null
+    });
+
+    if (error) {
+      console.error('Error creating quote:', error.message);
+      return;
+    }
+
+    console.log('Quote:', {
+      id: quote.id,
+      sender_amount: quote.sender_amount, // USDC to send
+      receiver_amount: quote.receiver_amount, // Fiat received
+      commercial_quotation: quote.commercial_quotation,
+      expires_at: quote.expires_at
+    });
+    ```
+
+    <Tip>
+    Use `currency_type: 'crypto'` if you want to specify the stablecoin amount instead of fiat amount.
+    </Tip>
+  </Step>
+
+  <Step title="Understand quote response">
+    The quote response includes:
+
+    - `id`: Quote ID for creating the payout
+    - `sender_amount`: Stablecoins you need to send
+    - `receiver_amount`: Fiat the recipient receives
+    - `receiver_local_amount`: Local currency amount (after fees)
+    - `contract`: Smart contract details for EVM approval (if needed)
+    - `expires_at`: Unix timestamp when quote expires
+  </Step>
+</Steps>
+
+## Step 2: Create Payout (Network-Specific)
+
+The payout creation process differs by blockchain network.
+
+### EVM Networks (Polygon, Base, Ethereum, etc.)
+
+<Steps>
+  <Step title="Create EVM payout">
+    For EVM chains, BlindPay handles the transaction:
+
+    ```typescript
+    const { data: payout, error } = await blindpay.payouts.createEvm({
+      quote_id: quote.id,
+      sender_wallet_address: '0xYourWalletAddress'
+    });
+
+    if (error) {
+      console.error('Error creating payout:', error.message);
+      return;
+    }
+
+    console.log('Payout created:', {
+      id: payout.id,
+      status: payout.status,
+      sender_wallet_address: payout.sender_wallet_address,
+      tracking_transaction: payout.tracking_transaction,
+      tracking_payment: payout.tracking_payment
+    });
+    ```
+
+    <Note>
+    BlindPay will pull the stablecoins from your wallet. Ensure you've approved the BlindPay contract to spend your tokens.
+    </Note>
+  </Step>
+
+  <Step title="Handle contract approval">
+    If this is your first payout with a token, you may need to approve the contract:
+
+    ```typescript
+    // The quote includes contract approval details
+    if (quote.contract) {
+      const { abi, address, functionName, blindpayContractAddress, amount, network } = quote.contract;
+      
+      // Use your Web3 library to approve
+      // Example with ethers.js:
+      // const contract = new ethers.Contract(address, abi, signer);
+      // await contract.approve(blindpayContractAddress, amount);
+      
+      console.log('Approve', amount, 'tokens for', blindpayContractAddress);
+      console.log('Chain ID:', network.chainId);
+    }
+    ```
+  </Step>
+</Steps>
+
+### Stellar Network
+
+<Steps>
+  <Step title="Authorize token (first time)">
+    For Stellar, first authorize the token if needed:
+
+    ```typescript
+    const { data: auth, error } = await blindpay.payouts.authorizeStellarToken({
+      quote_id: quote.id,
+      sender_wallet_address: 'GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B'
+    });
+
+    if (error) {
+      console.error('Error authorizing token:', error.message);
+      return;
+    }
+
+    console.log('Token authorized, transaction hash:', auth.transaction_hash);
+    ```
+  </Step>
+
+  <Step title="Create Stellar payout">
+    Then create the payout:
+
+    ```typescript
+    // Option 1: Let BlindPay handle the transaction
+    const { data: payout, error } = await blindpay.payouts.createStellar({
+      quote_id: quote.id,
+      sender_wallet_address: 'GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B'
+    });
+
+    // Option 2: Sign the transaction yourself
+    const { data: payout, error } = await blindpay.payouts.createStellar({
+      quote_id: quote.id,
+      sender_wallet_address: 'GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B',
+      signed_transaction: 'AAAAAgAAAABqVFqpZzXx...'
+    });
+
+    console.log('Stellar payout:', {
+      id: payout.id,
+      status: payout.status,
+      receiver_id: payout.receiver_id
+    });
+    ```
+  </Step>
+</Steps>
+
+### Solana Network
+
+<Steps>
+  <Step title="Create Solana payout">
+    For Solana, you need to sign the transaction:
+
+    ```typescript
+    // Option 1: BlindPay handles signing (delegated)
+    const { data: payout, error } = await blindpay.payouts.createSolana({
+      quote_id: quote.id,
+      sender_wallet_address: '7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5',
+      signed_transaction: null // BlindPay signs
+    });
+
+    // Option 2: You sign the transaction
+    // First prepare the transaction
+    const { data: delegationTx } = await blindpay.wallets.blockchain.prepareSolanaDelegationTransaction({
+      token_address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+      amount: '1000000',
+      owner_address: '7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5'
+    });
+
+    // Sign with your wallet
+    // const signedTx = await wallet.signTransaction(delegationTx.transaction);
+    
+    const { data: payout, error } = await blindpay.payouts.createSolana({
+      quote_id: quote.id,
+      sender_wallet_address: '7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5',
+      signed_transaction: 'base64SignedTransaction'
+    });
+
+    console.log('Solana payout:', {
+      id: payout.id,
+      status: payout.status
+    });
+    ```
+  </Step>
+</Steps>
+
+## Network Comparison
+
+<CodeGroup>
+```typescript Polygon (EVM)
+const { data: quote } = await blindpay.quotes.create({
+  bank_account_id: 'ba_000000000000',
+  currency_type: 'fiat',
+  cover_fees: false,
+  request_amount: 1000,
+  network: 'polygon',
+  token: 'USDC',
+  description: 'Payment',
+  transaction_document_file: null,
+  partner_fee_id: null,
+  transaction_document_id: null,
+  transaction_document_type: null
+});
+
+const { data: payout } = await blindpay.payouts.createEvm({
+  quote_id: quote.id,
+  sender_wallet_address: '0xYourAddress'
+});
+```
+
+```typescript Base (EVM)
+const { data: quote } = await blindpay.quotes.create({
+  bank_account_id: 'ba_000000000000',
+  currency_type: 'fiat',
+  cover_fees: false,
+  request_amount: 1000,
+  network: 'base',
+  token: 'USDC',
+  description: 'Payment',
+  transaction_document_file: null,
+  partner_fee_id: null,
+  transaction_document_id: null,
+  transaction_document_type: null
+});
+
+const { data: payout } = await blindpay.payouts.createEvm({
+  quote_id: quote.id,
+  sender_wallet_address: '0xYourAddress'
+});
+```
+
+```typescript Stellar
+const { data: quote } = await blindpay.quotes.create({
+  bank_account_id: 'ba_000000000000',
+  currency_type: 'fiat',
+  cover_fees: false,
+  request_amount: 1000,
+  network: 'stellar',
+  token: 'USDC',
+  description: 'Payment',
+  transaction_document_file: null,
+  partner_fee_id: null,
+  transaction_document_id: null,
+  transaction_document_type: null
+});
+
+const { data: payout } = await blindpay.payouts.createStellar({
+  quote_id: quote.id,
+  sender_wallet_address: 'GCDNJUBQSX...'
+});
+```
+
+```typescript Solana
+const { data: quote } = await blindpay.quotes.create({
+  bank_account_id: 'ba_000000000000',
+  currency_type: 'fiat',
+  cover_fees: false,
+  request_amount: 1000,
+  network: 'solana',
+  token: 'USDC',
+  description: 'Payment',
+  transaction_document_file: null,
+  partner_fee_id: null,
+  transaction_document_id: null,
+  transaction_document_type: null
+});
+
+const { data: payout } = await blindpay.payouts.createSolana({
+  quote_id: quote.id,
+  sender_wallet_address: '7YttLkH...',
+  signed_transaction: 'signedTx'
+});
+```
+</CodeGroup>
+
+## Step 3: Track Payout Status
+
+<Steps>
+  <Step title="Monitor payout progress">
+    Track the payout through its lifecycle:
+
+    ```typescript
+    const { data: payout, error } = await blindpay.payouts.get('pa_000000000000');
+
+    console.log('Payout status:', payout.status);
+    console.log('Tracking stages:', {
+      transaction: payout.tracking_transaction,
+      liquidity: payout.tracking_liquidity,
+      payment: payout.tracking_payment,
+      complete: payout.tracking_complete
+    });
+    ```
+  </Step>
+
+  <Step title="Understand tracking stages">
+    Payouts progress through multiple stages:
+
+    - **tracking_transaction**: Blockchain transaction confirmed
+    - **tracking_liquidity**: Stablecoins being liquidated to fiat
+    - **tracking_payment**: Fiat payment being sent to bank
+    - **tracking_complete**: Payment complete (or refunded if failed)
+    - **tracking_partner_fee**: Partner fee processing (if applicable)
+
+    Each stage includes:
+    - `step`: Status (`on_hold`, `processing`, `complete`)
+    - `completed_at`: ISO timestamp
+    - `estimated_time_of_arrival`: Expected completion time
+  </Step>
+</Steps>
+
+## Listing Payouts
+
+```typescript
+// List all payouts
+const { data: payouts } = await blindpay.payouts.list();
+
+// Filter by receiver
+const { data: receiverPayouts } = await blindpay.payouts.list({
+  receiver_id: 're_000000000000'
+});
+
+// Pagination
+const { data: paginatedPayouts } = await blindpay.payouts.list({
+  limit: 20,
+  starting_after: 'pa_000000000000'
+});
+
+console.log('Payouts:', payouts.data);
+console.log('Has more:', payouts.pagination.has_more);
+```
+
+## Public Tracking
+
+Allow recipients to track payouts without authentication:
+
+```typescript
+// Public tracking endpoint (no auth required)
+const { data: tracking } = await blindpay.payouts.getTrack('pa_000000000000');
+
+console.log('Public tracking:', {
+  status: tracking.status,
+  sender_amount: tracking.sender_amount,
+  receiver_amount: tracking.receiver_amount,
+  tracking_payment: tracking.tracking_payment,
+  tracking_complete: tracking.tracking_complete
+});
+```
+
+<Note>
+Share the payout ID with recipients so they can track status independently using the `getTrack` endpoint.
+</Note>
+
+## Error Handling
+
+```typescript
+const { data: payout, error } = await blindpay.payouts.createEvm({
+  quote_id: quote.id,
+  sender_wallet_address: walletAddress
+});
+
+if (error) {
+  console.error('Payout failed:', error.message);
+  
+  // Handle specific errors
+  if (error.message.includes('insufficient')) {
+    // Insufficient token balance
+    console.error('Not enough tokens in wallet');
+  } else if (error.message.includes('expired')) {
+    // Quote expired
+    console.error('Quote expired, create a new one');
+  } else if (error.message.includes('allowance')) {
+    // Contract not approved
+    console.error('Approve the contract first');
+  }
+  
+  return;
+}
+```
+
+<Warning>
+If a payout fails after the blockchain transaction, the funds will be automatically refunded. Check `tracking_complete.status` for "tokens_refunded".
+</Warning>
+
+## Advanced: Transaction Documents
+
+For compliance, attach transaction documents:
+
+```typescript
+// Convert document to base64
+const documentBase64 = Buffer.from(documentBuffer).toString('base64');
+
+const { data: quote } = await blindpay.quotes.create({
+  bank_account_id: 'ba_000000000000',
+  currency_type: 'fiat',
+  cover_fees: false,
+  request_amount: 10000,
+  network: 'polygon',
+  token: 'USDC',
+  description: 'Payment for Invoice #12345',
+  transaction_document_file: documentBase64,
+  transaction_document_id: 'INV-12345',
+  transaction_document_type: 'invoice',
+  partner_fee_id: null
+});
+```
+
+<Tip>
+Supported document types: `invoice`, `contract`, `receipt`, `remittance_advice`, `purchase_order`
+</Tip>
+
+## Best Practices
+
+1. **Quote Timing**: Create quotes immediately before payouts to minimize expiration risk
+2. **Network Selection**: Choose networks with lower gas fees for smaller amounts
+3. **Token Approval**: Pre-approve contracts for EVM chains to enable seamless payouts
+4. **Status Monitoring**: Use webhooks (`payout.update`, `payout.complete`) for real-time updates
+5. **Error Recovery**: Handle quote expiration gracefully by creating new quotes
+6. **Fee Strategy**: Decide whether to use `cover_fees: true` or `cover_fees: false` based on your business model
+7. **Documentation**: Always include transaction documents for large amounts or business payouts
+
+## Next Steps
+
+- Set up [webhook verification](/guides/webhook-verification) for real-time payout updates
+- Learn about [blockchain wallets](/guides/blockchain-wallets) for managing sender addresses
+- Explore receiver and bank account management in the API reference

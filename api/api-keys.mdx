@@ -1,0 +1,261 @@
+---
+title: 'API Keys'
+description: 'Manage API keys for programmatic access to your instance'
+---
+
+## List API Keys
+
+Retrieve a list of all API keys for your instance.
+
+```typescript
+const response = await blindpay.apiKeys.list();
+```
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of API key objects
+  
+  <Expandable title="API Key object">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the API key
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Name of the API key
+    </ResponseField>
+    
+    <ResponseField name="permission" type="string" required>
+      Permission level. Currently only `full_access` is supported
+    </ResponseField>
+    
+    <ResponseField name="token" type="string" required>
+      The API key token (only shown once during creation)
+    </ResponseField>
+    
+    <ResponseField name="ip_whitelist" type="array">
+      Array of IP addresses allowed to use this API key
+    </ResponseField>
+    
+    <ResponseField name="unkey_id" type="string" required>
+      Internal Unkey identifier
+    </ResponseField>
+    
+    <ResponseField name="last_used_at" type="string | null" required>
+      ISO 8601 timestamp of when the key was last used, or null if never used
+    </ResponseField>
+    
+    <ResponseField name="instance_id" type="string" required>
+      ID of the instance this key belongs to
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string" required>
+      ISO 8601 timestamp of when the key was created
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string" required>
+      ISO 8601 timestamp of when the key was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "data": [
+    {
+      "id": "key_1234567890",
+      "name": "Production API Key",
+      "permission": "full_access",
+      "token": "bp_live_***",
+      "ip_whitelist": ["192.168.1.1", "10.0.0.1"],
+      "unkey_id": "uk_1234567890",
+      "last_used_at": "2024-03-01T15:30:00Z",
+      "instance_id": "inst_1234567890",
+      "created_at": "2024-01-15T10:30:00Z",
+      "updated_at": "2024-01-15T10:30:00Z"
+    }
+  ],
+  "error": null
+}
+```
+</ResponseExample>
+
+## Create API Key
+
+Create a new API key for your instance.
+
+<Warning>
+The API key token is only shown once during creation. Make sure to save it securely.
+</Warning>
+
+```typescript
+const response = await blindpay.apiKeys.create({
+  name: "Production API Key",
+  permission: "full_access",
+  ip_whitelist: ["192.168.1.1", "10.0.0.1"]
+});
+```
+
+### Parameters
+
+<ParamField path="name" type="string" required>
+  A descriptive name for the API key
+</ParamField>
+
+<ParamField path="permission" type="string" required>
+  Permission level for the API key. Currently only `full_access` is supported
+</ParamField>
+
+<ParamField path="ip_whitelist" type="array">
+  Optional array of IP addresses that are allowed to use this API key. If not provided, the key can be used from any IP address
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="Create API Key Response">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the created API key
+    </ResponseField>
+    
+    <ResponseField name="token" type="string" required>
+      The API key token. This is only shown once - save it securely
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "data": {
+    "id": "key_1234567890",
+    "token": "bp_live_abcdefghijklmnopqrstuvwxyz123456"
+  },
+  "error": null
+}
+```
+</ResponseExample>
+
+## Get API Key
+
+Retrieve details about a specific API key.
+
+```typescript
+const response = await blindpay.apiKeys.get("key_1234567890");
+```
+
+### Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the API key to retrieve
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="API Key object">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the API key
+    </ResponseField>
+    
+    <ResponseField name="name" type="string" required>
+      Name of the API key
+    </ResponseField>
+    
+    <ResponseField name="permission" type="string" required>
+      Permission level. Currently only `full_access` is supported
+    </ResponseField>
+    
+    <ResponseField name="token" type="string" required>
+      The API key token (masked after creation)
+    </ResponseField>
+    
+    <ResponseField name="ip_whitelist" type="array">
+      Array of IP addresses allowed to use this API key
+    </ResponseField>
+    
+    <ResponseField name="unkey_id" type="string" required>
+      Internal Unkey identifier
+    </ResponseField>
+    
+    <ResponseField name="last_used_at" type="string | null" required>
+      ISO 8601 timestamp of when the key was last used, or null if never used
+    </ResponseField>
+    
+    <ResponseField name="instance_id" type="string" required>
+      ID of the instance this key belongs to
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string" required>
+      ISO 8601 timestamp of when the key was created
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string" required>
+      ISO 8601 timestamp of when the key was last updated
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "data": {
+    "id": "key_1234567890",
+    "name": "Production API Key",
+    "permission": "full_access",
+    "token": "bp_live_***",
+    "ip_whitelist": ["192.168.1.1", "10.0.0.1"],
+    "unkey_id": "uk_1234567890",
+    "last_used_at": "2024-03-01T15:30:00Z",
+    "instance_id": "inst_1234567890",
+    "created_at": "2024-01-15T10:30:00Z",
+    "updated_at": "2024-01-15T10:30:00Z"
+  },
+  "error": null
+}
+```
+</ResponseExample>
+
+## Delete API Key
+
+Permanently delete an API key.
+
+<Warning>
+Deleting an API key will immediately revoke access. Any applications using this key will no longer be able to authenticate.
+</Warning>
+
+```typescript
+const response = await blindpay.apiKeys.delete("key_1234567890");
+```
+
+### Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the API key to delete
+</ParamField>
+
+### Response
+
+Returns a success response with no data on successful deletion.
+
+<ResponseExample>
+```json
+{
+  "data": null,
+  "error": null
+}
+```
+</ResponseExample>
+
+## Best Practices
+
+<Tip>
+Follow these best practices when working with API keys:
+
+- **Use descriptive names** - Name your keys based on their purpose or application
+- **Implement IP whitelisting** - Restrict key usage to specific IP addresses when possible
+- **Rotate keys regularly** - Create new keys and delete old ones periodically
+- **Store securely** - Never commit API keys to version control or expose them in client-side code
+- **Monitor usage** - Check the `last_used_at` field to identify unused or suspicious keys
+</Tip>

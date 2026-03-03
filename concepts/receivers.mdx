@@ -1,0 +1,296 @@
+---
+title: Receivers
+description: Understanding receivers, KYC/KYB verification levels, and transaction limits in BlindPay
+---
+
+## What are Receivers?
+
+Receivers represent the entities that will receive funds in your BlindPay transactions. A receiver can be either an individual person or a business, and must complete identity verification (KYC/KYB) before they can receive payments.
+
+Every receiver in BlindPay is associated with:
+- Identity verification status and level
+- Transaction limits (per transaction, daily, and monthly)
+- One or more bank accounts for receiving funds
+- Terms of Service acceptance status
+
+## Receiver Types
+
+BlindPay supports two types of receivers:
+
+### Individual Receivers
+
+Individuals are natural persons who will receive funds. They must provide personal information including:
+- Name, date of birth, and contact details
+- Tax ID (SSN, CPF, etc. depending on country)
+- Residential address with proof of address documentation
+- Government-issued ID (passport, driver's license, or ID card)
+- Email and phone number
+
+### Business Receivers
+
+Businesses are legal entities such as corporations, LLCs, partnerships, or sole proprietorships. They require:
+- Legal business name and formation details
+- Business tax ID (EIN, CNPJ, etc.)
+- Business address with proof of address documentation
+- Incorporation documents
+- Ownership structure (beneficial owners and controlling persons)
+- Information about each owner with 25% or more ownership
+
+<Note>
+For businesses, each beneficial owner or controlling person must provide their personal identification documents, similar to individual KYC requirements.
+</Note>
+
+## KYC/KYB Verification Levels
+
+BlindPay offers different verification levels that determine transaction limits and documentation requirements:
+
+### Light KYC
+
+The lightest verification level with minimal documentation requirements. Best for:
+- Quick onboarding for low-value transactions
+- Testing and pilot programs
+- Smallest transaction limits
+
+### Standard KYC/KYB
+
+The most common verification level, balancing documentation requirements with transaction capacity. Required documentation:
+
+**For Individuals:**
+- Government-issued ID (front and back)
+- Proof of address (utility bill, bank statement, rental agreement, etc.)
+- Tax ID
+- Contact information
+
+**For Businesses:**
+- Incorporation documents
+- Proof of ownership structure
+- Proof of address
+- Owner information (for beneficial owners with 25%+ ownership)
+
+```typescript
+// Create an individual receiver with standard KYC
+const { data, error } = await blindpay.receivers.createIndividualWithStandardKYC({
+  country: "US",
+  email: "john.doe@example.com",
+  first_name: "John",
+  last_name: "Doe",
+  date_of_birth: "1990-01-15",
+  tax_id: "123-45-6789",
+  address_line_1: "123 Main Street",
+  city: "San Francisco",
+  state_province_region: "CA",
+  postal_code: "94102",
+  phone_number: "+14155551234",
+  id_doc_type: "PASSPORT",
+  id_doc_country: "US",
+  id_doc_front_file: "https://example.com/id-front.jpg",
+  id_doc_back_file: "https://example.com/id-back.jpg",
+  proof_of_address_doc_type: "UTILITY_BILL",
+  proof_of_address_doc_file: "https://example.com/proof-of-address.pdf"
+});
+
+if (error) {
+  console.error("Failed to create receiver:", error.message);
+} else {
+  console.log("Receiver created:", data.id);
+}
+```
+
+### Enhanced KYC
+
+The highest verification level for individuals requiring additional documentation:
+- All standard KYC requirements
+- Source of funds documentation
+- Individual holding documents
+- Purpose of transactions declaration
+- Purpose of transactions explanation (if purpose is "other")
+
+Enhanced KYC enables the highest transaction limits and is required for:
+- High-value transactions
+- Regulated industries
+- Enhanced due diligence requirements
+
+```typescript
+// Create an individual receiver with enhanced KYC
+const { data, error } = await blindpay.receivers.createIndividualWithEnhancedKYC({
+  country: "BR",
+  email: "maria.silva@example.com",
+  first_name: "Maria",
+  last_name: "Silva",
+  date_of_birth: "1985-03-20",
+  tax_id: "12345678900",
+  address_line_1: "Av. Paulista, 1000",
+  city: "São Paulo",
+  state_province_region: "SP",
+  postal_code: "01310-100",
+  phone_number: "+5511987654321",
+  id_doc_type: "ID_CARD",
+  id_doc_country: "BR",
+  id_doc_front_file: "https://example.com/id-front.jpg",
+  proof_of_address_doc_type: "BANK_STATEMENT",
+  proof_of_address_doc_file: "https://example.com/proof-of-address.pdf",
+  source_of_funds_doc_type: "salary",
+  source_of_funds_doc_file: "https://example.com/payslip.pdf",
+  purpose_of_transactions: "receive_salary"
+});
+```
+
+## Transaction Limits
+
+Every receiver has three types of limits that control how much they can receive:
+
+### Per Transaction Limit
+
+The maximum amount allowed in a single transaction. This prevents unusually large individual transfers that might indicate fraud or error.
+
+### Daily Limit
+
+The maximum cumulative amount a receiver can receive within a 24-hour rolling window. This helps monitor transaction velocity and patterns.
+
+### Monthly Limit
+
+The maximum cumulative amount a receiver can receive within a 30-day rolling window. This provides broader oversight of transaction volumes.
+
+<Warning>
+All limits are enforced in USD regardless of the transaction currency. BlindPay converts transaction amounts to USD using current exchange rates when checking limits.
+</Warning>
+
+### Checking Receiver Limits
+
+You can retrieve current limits and usage for any receiver:
+
+```typescript
+const { data, error } = await blindpay.receivers.getLimits("re_abc123");
+
+if (data) {
+  console.log("Payout limits:", data.limits.payout);
+  // {
+  //   daily: 50000,
+  //   monthly: 200000
+  // }
+  
+  console.log("Payin limits:", data.limits.payin);
+  // {
+  //   daily: 50000,
+  //   monthly: 200000
+  // }
+}
+```
+
+### Requesting Limit Increases
+
+Receivers can request higher limits by submitting supporting documentation:
+
+```typescript
+const { data, error } = await blindpay.receivers.requestLimitIncrease({
+  receiver_id: "re_abc123",
+  daily: 100000,
+  monthly: 500000,
+  per_transaction: 50000,
+  supporting_document_type: "individual_bank_statement",
+  supporting_document_file: "https://example.com/bank-statement.pdf"
+});
+
+if (data) {
+  console.log("Limit increase request submitted:", data.id);
+}
+```
+
+Supporting document types include:
+- **For Individuals**: `individual_bank_statement`, `individual_tax_return`, `individual_proof_of_income`
+- **For Businesses**: `business_bank_statement`, `business_financial_statements`, `business_tax_return`
+
+You can track the status of limit increase requests:
+
+```typescript
+const { data, error } = await blindpay.receivers.getLimitIncreaseRequests("re_abc123");
+
+if (data) {
+  data.forEach(request => {
+    console.log(`Request ${request.id}: ${request.status}`);
+    // Status can be: "in_review", "approved", or "rejected"
+  });
+}
+```
+
+## KYC Status and Warnings
+
+Receivers go through a verification process after creation. The `kyc_status` field indicates where they are in this process:
+
+- `verifying` - Documents are being reviewed
+- `approved` - Verification complete, receiver can transact
+- `rejected` - Verification failed
+- `requires_info` - Additional information needed
+
+The `kyc_warnings` array contains any issues that need resolution:
+
+```typescript
+const { data, error } = await blindpay.receivers.get("re_abc123");
+
+if (data?.kyc_warnings && data.kyc_warnings.length > 0) {
+  data.kyc_warnings.forEach(warning => {
+    console.log(`Warning ${warning.warning_id}: ${warning.message}`);
+    console.log(`Code: ${warning.code}`);
+    console.log(`Resolution status: ${warning.resolution_status}`);
+  });
+}
+```
+
+## Managing Receivers
+
+### Listing Receivers
+
+```typescript
+const { data, error } = await blindpay.receivers.list();
+
+if (data) {
+  data.forEach(receiver => {
+    if (receiver.type === "individual") {
+      console.log(`${receiver.first_name} ${receiver.last_name}`);
+    } else {
+      console.log(receiver.legal_name);
+    }
+  });
+}
+```
+
+### Updating Receiver Information
+
+```typescript
+const { data, error } = await blindpay.receivers.update({
+  receiver_id: "re_abc123",
+  phone_number: "+14155559999",
+  address_line_1: "456 New Street",
+  city: "New York",
+  state_province_region: "NY",
+  postal_code: "10001"
+});
+```
+
+### Deleting a Receiver
+
+```typescript
+const { data, error } = await blindpay.receivers.delete("re_abc123");
+
+if (!error) {
+  console.log("Receiver deleted successfully");
+}
+```
+
+<Note>
+Deleting a receiver is permanent and cannot be undone. The receiver ID cannot be reused. Ensure you have no pending transactions before deleting a receiver.
+</Note>
+
+## Best Practices
+
+1. **Start with the appropriate KYC level**: Choose standard KYC for most use cases. Only use enhanced KYC when higher limits are required.
+
+2. **Validate documents before submission**: Ensure ID documents are clear, legible, and not expired. Proof of address documents should be recent (typically within 90 days).
+
+3. **Monitor KYC warnings**: Check the `kyc_warnings` array regularly and address any issues promptly to avoid transaction delays.
+
+4. **Set up webhook listeners**: Subscribe to `receiver.new` and `receiver.update` events to get notified when verification status changes.
+
+5. **Plan for limit increases**: If you anticipate needing higher limits, submit increase requests proactively with proper documentation.
+
+6. **Store external IDs**: Use the `external_id` field to link receivers to your system's user IDs for easier reconciliation.

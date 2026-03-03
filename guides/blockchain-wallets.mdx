@@ -1,0 +1,504 @@
+---
+title: Blockchain Wallets
+description: Guide for creating and managing blockchain wallets for receivers
+---
+
+Blockchain wallets are destination addresses where stablecoins are deposited after payin conversions or sources for payout conversions. This guide covers creating, verifying, and managing blockchain wallets across different networks.
+
+## Overview
+
+BlindPay supports blockchain wallets on multiple networks:
+- **EVM chains**: Ethereum, Polygon, Base, Arbitrum, Optimism, etc.
+- **Stellar**: Stellar network
+- **Solana**: Solana network
+
+Each receiver can have multiple wallets across different networks.
+
+## Wallet Types
+
+BlindPay supports two types of wallets:
+
+### Account Abstraction Wallets
+
+Modern wallets that provide better UX and security. Simply provide the wallet address.
+
+```typescript
+const { data: wallet, error } = await blindpay.wallets.blockchain.createWithAddress({
+  receiver_id: 're_000000000000',
+  name: 'Main Wallet',
+  network: 'polygon',
+  address: '0xDD6a3aD0949396e57C7738ba8FC1A46A5a1C372C'
+});
+```
+
+### Traditional Wallets
+
+Require signature verification to prove ownership. You must sign a message and provide the transaction hash.
+
+```typescript
+// Step 1: Get the message to sign
+const { data: messageData, error: msgError } = 
+  await blindpay.wallets.blockchain.getWalletMessage('re_000000000000');
+
+// Step 2: Sign the message with your wallet
+// const signature = await wallet.signMessage(messageData.message);
+// const txHash = '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359';
+
+// Step 3: Create wallet with transaction hash
+const { data: wallet, error } = await blindpay.wallets.blockchain.createWithHash({
+  receiver_id: 're_000000000000',
+  name: 'Main Wallet',
+  network: 'polygon',
+  signature_tx_hash: txHash
+});
+```
+
+<Tip>
+Use Account Abstraction wallets (`createWithAddress`) for simpler integration. Traditional wallets (`createWithHash`) are for backward compatibility.
+</Tip>
+
+## Creating Wallets
+
+### EVM Wallets (Polygon, Base, Ethereum, etc.)
+
+<Steps>
+  <Step title="Create EVM wallet">
+    ```typescript
+    import { BlindPay } from '@blindpay/sdk';
+
+    const blindpay = new BlindPay({
+      apiKey: process.env.BLINDPAY_API_KEY,
+      instanceId: process.env.BLINDPAY_INSTANCE_ID
+    });
+
+    const { data: wallet, error } = await blindpay.wallets.blockchain.createWithAddress({
+      receiver_id: 're_000000000000',
+      name: 'Polygon USDC Wallet',
+      network: 'polygon',
+      address: '0xYourWalletAddress'
+    });
+
+    if (error) {
+      console.error('Error creating wallet:', error.message);
+      return;
+    }
+
+    console.log('Wallet created:', {
+      id: wallet.id,
+      name: wallet.name,
+      network: wallet.network,
+      address: wallet.address,
+      is_account_abstraction: wallet.is_account_abstraction
+    });
+    ```
+  </Step>
+</Steps>
+
+### Stellar Wallets
+
+<Steps>
+  <Step title="Create Stellar wallet">
+    ```typescript
+    const { data: wallet, error } = await blindpay.wallets.blockchain.createWithAddress({
+      receiver_id: 're_000000000000',
+      name: 'Stellar USDC Wallet',
+      network: 'stellar',
+      address: 'GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B'
+    });
+
+    console.log('Stellar wallet created:', wallet);
+    ```
+  </Step>
+
+  <Step title="Create asset trustline (if needed)">
+    For USDB on Stellar, you need to create a trustline:
+
+    ```typescript
+    const { data: trustline, error } = 
+      await blindpay.wallets.blockchain.createAssetTrustline(
+        'GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B'
+      );
+
+    if (error) {
+      console.error('Error creating trustline:', error.message);
+      return;
+    }
+
+    // Sign and submit the XDR transaction
+    console.log('Sign this XDR:', trustline.xdr);
+    // Use Stellar SDK to sign and submit
+    ```
+  </Step>
+</Steps>
+
+### Solana Wallets
+
+<Steps>
+  <Step title="Create Solana wallet">
+    ```typescript
+    const { data: wallet, error } = await blindpay.wallets.blockchain.createWithAddress({
+      receiver_id: 're_000000000000',
+      name: 'Solana USDC Wallet',
+      network: 'solana',
+      address: '7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5'
+    });
+
+    console.log('Solana wallet created:', wallet);
+    ```
+  </Step>
+</Steps>
+
+## Network Examples
+
+<CodeGroup>
+```typescript Polygon
+const { data: wallet } = await blindpay.wallets.blockchain.createWithAddress({
+  receiver_id: 're_000000000000',
+  name: 'Polygon Wallet',
+  network: 'polygon',
+  address: '0xYourAddress'
+});
+```
+
+```typescript Base
+const { data: wallet } = await blindpay.wallets.blockchain.createWithAddress({
+  receiver_id: 're_000000000000',
+  name: 'Base Wallet',
+  network: 'base',
+  address: '0xYourAddress'
+});
+```
+
+```typescript Ethereum
+const { data: wallet } = await blindpay.wallets.blockchain.createWithAddress({
+  receiver_id: 're_000000000000',
+  name: 'Ethereum Wallet',
+  network: 'ethereum',
+  address: '0xYourAddress'
+});
+```
+
+```typescript Arbitrum
+const { data: wallet } = await blindpay.wallets.blockchain.createWithAddress({
+  receiver_id: 're_000000000000',
+  name: 'Arbitrum Wallet',
+  network: 'arbitrum',
+  address: '0xYourAddress'
+});
+```
+
+```typescript Optimism
+const { data: wallet } = await blindpay.wallets.blockchain.createWithAddress({
+  receiver_id: 're_000000000000',
+  name: 'Optimism Wallet',
+  network: 'optimism',
+  address: '0xYourAddress'
+});
+```
+
+```typescript Stellar
+const { data: wallet } = await blindpay.wallets.blockchain.createWithAddress({
+  receiver_id: 're_000000000000',
+  name: 'Stellar Wallet',
+  network: 'stellar',
+  address: 'GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B'
+});
+```
+
+```typescript Solana
+const { data: wallet } = await blindpay.wallets.blockchain.createWithAddress({
+  receiver_id: 're_000000000000',
+  name: 'Solana Wallet',
+  network: 'solana',
+  address: '7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5'
+});
+```
+</CodeGroup>
+
+## Managing Wallets
+
+### List Wallets
+
+```typescript
+// Get all wallets for a receiver
+const { data: wallets, error } = await blindpay.wallets.blockchain.list(
+  're_000000000000'
+);
+
+if (error) {
+  console.error('Error listing wallets:', error.message);
+  return;
+}
+
+wallets.forEach(wallet => {
+  console.log(`${wallet.name} (${wallet.network}):`, {
+    id: wallet.id,
+    address: wallet.address,
+    is_account_abstraction: wallet.is_account_abstraction
+  });
+});
+```
+
+### Get Specific Wallet
+
+```typescript
+const { data: wallet, error } = await blindpay.wallets.blockchain.get({
+  receiver_id: 're_000000000000',
+  id: 'bw_000000000000'
+});
+
+if (error) {
+  console.error('Error fetching wallet:', error.message);
+  return;
+}
+
+console.log('Wallet details:', wallet);
+```
+
+### Delete Wallet
+
+```typescript
+const { data, error } = await blindpay.wallets.blockchain.delete({
+  receiver_id: 're_000000000000',
+  id: 'bw_000000000000'
+});
+
+if (error) {
+  console.error('Error deleting wallet:', error.message);
+  return;
+}
+
+console.log('Wallet deleted successfully');
+```
+
+<Warning>
+Deleting a wallet that's linked to a virtual account will cause future deposits to fail. Update the virtual account first.
+</Warning>
+
+## Advanced: USDB Token Operations
+
+### Mint USDB on Stellar
+
+```typescript
+const { data, error } = await blindpay.wallets.blockchain.mintUsdbStellar({
+  address: 'GCDNJUBQSX7AJWLJACMJ7I4BC3Z47BQUTMHEICZLE6MU4KQBRYG5JY6B',
+  amount: '1000000', // Amount in stroops
+  signedXdr: 'AAAAAgAAAABqVFqpZzXx...' // Signed XDR transaction
+});
+
+if (error) {
+  console.error('Error minting USDB:', error.message);
+  return;
+}
+
+console.log('USDB minted successfully');
+```
+
+### Mint USDB on Solana
+
+```typescript
+const { data, error } = await blindpay.wallets.blockchain.mintUsdbSolana({
+  address: '7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5',
+  amount: '1000000' // Amount in lamports
+});
+
+if (error) {
+  console.error('Error minting USDB:', error.message);
+  return;
+}
+
+console.log('USDB minted:', {
+  success: data.success,
+  signature: data.signature
+});
+```
+
+### Prepare Solana Delegation Transaction
+
+```typescript
+const { data, error } = 
+  await blindpay.wallets.blockchain.prepareSolanaDelegationTransaction({
+    token_address: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    amount: '1000000',
+    owner_address: '7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5'
+  });
+
+if (error) {
+  console.error('Error preparing delegation:', error.message);
+  return;
+}
+
+console.log('Delegation transaction:', {
+  success: data.success,
+  transaction: data.transaction // Base64 encoded transaction
+});
+
+// Sign and submit the transaction with your Solana wallet
+```
+
+## Traditional Wallet Verification Flow
+
+For wallets that require signature verification:
+
+<Steps>
+  <Step title="Get message to sign">
+    ```typescript
+    const { data: messageData, error } = 
+      await blindpay.wallets.blockchain.getWalletMessage('re_000000000000');
+
+    if (error) {
+      console.error('Error getting message:', error.message);
+      return;
+    }
+
+    console.log('Message to sign:', messageData.message);
+    ```
+  </Step>
+
+  <Step title="Sign message with wallet">
+    Use your wallet library to sign the message:
+
+    ```typescript
+    // Example with ethers.js
+    // const signer = provider.getSigner();
+    // const signature = await signer.signMessage(messageData.message);
+    // const tx = await signer.sendTransaction({
+    //   to: '0xRecipient',
+    //   value: 0,
+    //   data: signature
+    // });
+    // const txHash = tx.hash;
+    ```
+  </Step>
+
+  <Step title="Create wallet with signature">
+    ```typescript
+    const { data: wallet, error } = await blindpay.wallets.blockchain.createWithHash({
+      receiver_id: 're_000000000000',
+      name: 'Verified Wallet',
+      network: 'polygon',
+      signature_tx_hash: '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359'
+    });
+
+    console.log('Wallet verified and created:', wallet);
+    ```
+  </Step>
+</Steps>
+
+## Complete Example
+
+```typescript
+import { BlindPay } from '@blindpay/sdk';
+
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID
+});
+
+async function setupReceiverWallets(receiverId: string) {
+  // Create wallets on multiple networks
+  const wallets = await Promise.all([
+    // Polygon for low fees
+    blindpay.wallets.blockchain.createWithAddress({
+      receiver_id: receiverId,
+      name: 'Polygon USDC',
+      network: 'polygon',
+      address: '0xYourPolygonAddress'
+    }),
+    // Base for fast settlements
+    blindpay.wallets.blockchain.createWithAddress({
+      receiver_id: receiverId,
+      name: 'Base USDC',
+      network: 'base',
+      address: '0xYourBaseAddress'
+    }),
+    // Solana for speed
+    blindpay.wallets.blockchain.createWithAddress({
+      receiver_id: receiverId,
+      name: 'Solana USDC',
+      network: 'solana',
+      address: 'YourSolanaAddress'
+    })
+  ]);
+
+  // Check for errors
+  const failed = wallets.filter(w => w.error);
+  if (failed.length > 0) {
+    console.error('Some wallets failed:', failed);
+  }
+
+  // List all created wallets
+  const { data: allWallets } = await blindpay.wallets.blockchain.list(receiverId);
+  console.log('Total wallets:', allWallets.length);
+  
+  return allWallets;
+}
+
+// Usage
+setupReceiverWallets('re_000000000000')
+  .then(wallets => {
+    wallets.forEach(w => {
+      console.log(`${w.name}: ${w.address} on ${w.network}`);
+    });
+  })
+  .catch(error => {
+    console.error('Setup failed:', error);
+  });
+```
+
+## Error Handling
+
+```typescript
+const { data: wallet, error } = await blindpay.wallets.blockchain.createWithAddress({
+  receiver_id: 're_000000000000',
+  name: 'My Wallet',
+  network: 'polygon',
+  address: '0xInvalidAddress'
+});
+
+if (error) {
+  if (error.message.includes('invalid address')) {
+    console.error('Invalid wallet address format');
+  } else if (error.message.includes('network')) {
+    console.error('Unsupported network');
+  } else if (error.message.includes('receiver')) {
+    console.error('Receiver not found or not approved');
+  } else {
+    console.error('Unknown error:', error.message);
+  }
+  return;
+}
+```
+
+## Best Practices
+
+1. **Multiple Networks**: Create wallets on multiple networks to give flexibility
+2. **Naming Convention**: Use descriptive names like "Polygon USDC Wallet" for clarity
+3. **Account Abstraction**: Prefer AA wallets for simpler UX
+4. **Address Validation**: Validate addresses client-side before API calls
+5. **Network Matching**: Ensure wallet network matches the payin/payout network
+6. **Wallet Limits**: There's no hard limit on wallets per receiver, but keep it reasonable
+7. **Default Wallet**: Consider marking one wallet as "primary" in your application
+8. **Gas Considerations**: Choose networks with lower gas fees for small transactions
+
+## Network Recommendations
+
+| Network | Best For | Fees | Speed |
+|---------|----------|------|-------|
+| **Polygon** | High volume, low fees | Very Low | Fast |
+| **Base** | Coinbase integration | Low | Very Fast |
+| **Solana** | Speed & cost | Very Low | Very Fast |
+| **Ethereum** | Maximum security | High | Moderate |
+| **Arbitrum** | DeFi integration | Low | Fast |
+| **Optimism** | Ethereum L2 | Low | Fast |
+| **Stellar** | Cross-border | Very Low | Fast |
+
+<Tip>
+For most use cases, start with Polygon (low fees) or Base (Coinbase ecosystem). Add other networks as needed.
+</Tip>
+
+## Next Steps
+
+- Learn about [virtual accounts](/guides/virtual-accounts) that use blockchain wallets
+- Set up [payins](/guides/payins) to receive stablecoins to these wallets
+- Create [payouts](/guides/payouts) to send from these wallets

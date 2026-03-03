@@ -1,0 +1,404 @@
+---
+title: Quotes
+description: Understanding quotes, FX rates, and pricing in BlindPay transactions
+---
+
+## What are Quotes?
+
+A quote is a price guarantee for a BlindPay transaction. It locks in the exchange rate, fees, and exact amounts for a specific time window (typically 10 minutes). Quotes are required before executing any payout transaction.
+
+Think of a quote as a reservation: it guarantees the price and exchange rate, but doesn't execute the transaction. You must create a payout using the quote ID to actually send funds.
+
+## Why Quotes Matter
+
+Cryptocurrency and foreign exchange rates fluctuate constantly. Quotes solve two critical problems:
+
+1. **Price certainty**: Users know exactly how much they'll send and how much the receiver gets before confirming the transaction.
+2. **Rate protection**: The exchange rate is locked for the quote's validity period, protecting against market volatility during transaction approval.
+
+## Quote Components
+
+Every quote contains the following information:
+
+### Exchange Rates
+
+```typescript
+type QuoteRates = {
+  commercial_quotation: number;  // Market exchange rate
+  blindpay_quotation: number;    // BlindPay's exchange rate (includes spread)
+}
+```
+
+- **Commercial quotation**: The mid-market exchange rate from commercial data providers
+- **BlindPay quotation**: The rate BlindPay offers, which includes the FX spread
+
+The difference between these rates represents BlindPay's foreign exchange markup.
+
+### Transaction Amounts
+
+```typescript
+type QuoteAmounts = {
+  sender_amount: number;         // Amount sender pays (in crypto)
+  receiver_amount: number;       // Amount receiver gets (in fiat)
+  receiver_local_amount?: number; // Optional: receiver amount in their local currency
+}
+```
+
+- **Sender amount**: The total cryptocurrency amount the sender will pay, including all fees if `cover_fees` is true
+- **Receiver amount**: The exact fiat amount the receiver will receive in their bank account
+- **Receiver local amount**: If the transaction involves currency conversion (e.g., USDC to BRL), this shows the amount in the receiver's local currency
+
+### Fees
+
+```typescript
+type QuoteFees = {
+  flat_fee?: number;            // Fixed fee in USD
+  partner_fee_amount?: number;  // Partner fee if applicable
+}
+```
+
+- **Flat fee**: Your instance's fixed transaction fee (configured in BlindPay dashboard)
+- **Partner fee**: Optional additional fee for your platform (see Partner Fees documentation)
+
+### Metadata
+
+```typescript
+type QuoteMetadata = {
+  id: string;                   // Quote ID for creating the payout
+  expires_at: number;           // Unix timestamp when quote expires
+  description?: string;         // Optional description/memo
+}
+```
+
+## Creating a Quote
+
+Quotes are created by specifying either the sender amount or receiver amount, along with the payment details:
+
+### Sender Amount Quote
+
+Use this when you know how much cryptocurrency the sender wants to send:
+
+```typescript
+const { data, error } = await blindpay.quotes.create({
+  bank_account_id: "ba_abc123",
+  currency_type: "sender",        // Specifying sender amount
+  request_amount: 1000,            // 1000 USDC
+  network: "base",
+  token: "USDC",
+  cover_fees: true,                // Include fees in sender amount
+  description: "Payment for services",
+  transaction_document_type: "invoice",
+  transaction_document_file: "https://example.com/invoice.pdf"
+});
+
+if (data) {
+  console.log("Sender pays:", data.sender_amount, "USDC");
+  console.log("Receiver gets:", data.receiver_amount, "USD");
+  console.log("Quote expires at:", new Date(data.expires_at * 1000));
+  console.log("Quote ID:", data.id);
+}
+```
+
+With `currency_type: "sender"` and `cover_fees: true`:
+- The sender pays exactly the `request_amount`
+- Fees are deducted from this amount
+- The receiver gets `request_amount - fees` (converted to fiat)
+
+### Receiver Amount Quote
+
+Use this when you know exactly how much the receiver should get:
+
+```typescript
+const { data, error } = await blindpay.quotes.create({
+  bank_account_id: "ba_abc123",
+  currency_type: "receiver",      // Specifying receiver amount
+  request_amount: 5000,            // 5000 BRL
+  network: "base",
+  token: "USDC",
+  cover_fees: false,               // Fees not included in receiver amount
+  description: "Salary payment"
+});
+
+if (data) {
+  console.log("Sender pays:", data.sender_amount, "USDC");
+  console.log("Receiver gets:", data.receiver_amount, "BRL");
+  console.log("Exchange rate:", data.blindpay_quotation);
+}
+```
+
+With `currency_type: "receiver"` and `cover_fees: false`:
+- The receiver gets exactly the `request_amount`
+- The sender pays `request_amount + fees` (in crypto)
+
+## Understanding cover_fees
+
+The `cover_fees` parameter determines who pays the transaction fees:
+
+### cover_fees: true (Sender Pays Fees)
+
+```typescript
+// Example: Sender wants to send exactly 1000 USDC
+const quote = await blindpay.quotes.create({
+  bank_account_id: "ba_abc123",
+  currency_type: "sender",
+  request_amount: 1000,
+  network: "base",
+  token: "USDC",
+  cover_fees: true
+});
+
+// Result:
+// sender_amount: 1000 USDC (exactly what they specified)
+// receiver_amount: ~996 USD (after deducting $4 fee)
+// The sender knows they'll pay exactly 1000 USDC all-in
+```
+
+### cover_fees: false (Receiver Pays Fees)
+
+```typescript
+// Example: Receiver needs to get exactly 1000 USD
+const quote = await blindpay.quotes.create({
+  bank_account_id: "ba_abc123",
+  currency_type: "receiver",
+  request_amount: 1000,
+  network: "base",
+  token: "USDC",
+  cover_fees: false
+});
+
+// Result:
+// sender_amount: ~1004 USDC (includes the $4 fee)
+// receiver_amount: 1000 USD (exactly what they specified)
+// The receiver gets exactly 1000 USD guaranteed
+```
+
+<Note>
+`cover_fees` works in combination with `currency_type` to give you precise control over who bears the transaction costs and what amounts are guaranteed.
+</Note>
+
+## Quote Expiration
+
+Quotes are valid for a limited time (typically 10 minutes) to protect against exchange rate volatility:
+
+```typescript
+const { data, error } = await blindpay.quotes.create({
+  bank_account_id: "ba_abc123",
+  currency_type: "sender",
+  request_amount: 1000,
+  network: "base",
+  token: "USDC",
+  cover_fees: true
+});
+
+if (data) {
+  const expiresAt = new Date(data.expires_at * 1000);
+  const now = new Date();
+  const minutesUntilExpiry = (expiresAt.getTime() - now.getTime()) / 1000 / 60;
+  
+  console.log(`Quote expires in ${minutesUntilExpiry.toFixed(1)} minutes`);
+  
+  if (now > expiresAt) {
+    console.log("Quote has expired, create a new one");
+  }
+}
+```
+
+<Warning>
+You cannot create a payout with an expired quote. Always check the expiration time and create a new quote if needed.
+</Warning>
+
+## FX Rate Preview
+
+If you want to show exchange rates to users without creating a full quote, use the FX rate endpoint:
+
+```typescript
+const { data, error } = await blindpay.quotes.getFxRate({
+  currency_type: "sender",
+  from: "USDC",
+  to: "BRL",
+  request_amount: 1000
+});
+
+if (data) {
+  console.log("Market rate:", data.commercial_quotation);
+  console.log("BlindPay rate:", data.blindpay_quotation);
+  console.log("You'll receive:", data.result_amount, "BRL");
+  console.log("Flat fee:", data.instance_flat_fee, "USD");
+  console.log("Percentage fee:", data.instance_percentage_fee, "%");
+}
+```
+
+The FX rate endpoint:
+- Does not create a quote or reserve rates
+- Shows current market conditions
+- Helps users understand pricing before committing
+- Useful for calculators and preview UIs
+
+## Smart Contract Approval (EVM Chains)
+
+For EVM-compatible chains (Ethereum, Base, Arbitrum, Polygon), quotes include contract approval details:
+
+```typescript
+const { data, error } = await blindpay.quotes.create({
+  bank_account_id: "ba_abc123",
+  currency_type: "sender",
+  request_amount: 1000,
+  network: "base",
+  token: "USDC",
+  cover_fees: true
+});
+
+if (data?.contract) {
+  console.log("Contract address:", data.contract.address);
+  console.log("BlindPay contract:", data.contract.blindpayContractAddress);
+  console.log("Amount to approve:", data.contract.amount);
+  console.log("Chain ID:", data.contract.network.chainId);
+  console.log("Network:", data.contract.network.name);
+  
+  // Use with wagmi, viem, ethers.js, etc.
+  // Example with wagmi:
+  // const { writeContract } = useWriteContract();
+  // writeContract({
+  //   address: data.contract.address,
+  //   abi: data.contract.abi,
+  //   functionName: 'approve',
+  //   args: [data.contract.blindpayContractAddress, data.contract.amount]
+  // });
+}
+```
+
+The contract object provides everything needed to approve the USDC/USDT spend before creating the payout.
+
+## Partner Fees
+
+You can add custom fees to quotes using partner fees:
+
+```typescript
+// First, create a partner fee configuration
+const { data: partnerFee } = await blindpay.partnerFees.create({
+  name: "Platform Fee",
+  percentage: 1.5, // 1.5%
+  flat_fee: 2      // $2 USD
+});
+
+// Then reference it in quotes
+const { data, error } = await blindpay.quotes.create({
+  bank_account_id: "ba_abc123",
+  currency_type: "sender",
+  request_amount: 1000,
+  network: "base",
+  token: "USDC",
+  cover_fees: true,
+  partner_fee_id: partnerFee.id
+});
+
+if (data) {
+  console.log("Partner fee amount:", data.partner_fee_amount, "USD");
+  console.log("Total sender amount:", data.sender_amount, "USDC");
+}
+```
+
+See the Partner Fees documentation for more details on monetizing your integration.
+
+## Transaction Documents
+
+Some jurisdictions require supporting documentation for transactions:
+
+```typescript
+const { data, error } = await blindpay.quotes.create({
+  bank_account_id: "ba_abc123",
+  currency_type: "sender",
+  request_amount: 1000,
+  network: "base",
+  token: "USDC",
+  cover_fees: true,
+  transaction_document_type: "invoice",
+  transaction_document_file: "https://example.com/invoice-12345.pdf",
+  transaction_document_id: "INV-12345",
+  description: "Invoice INV-12345 - Web development services"
+});
+```
+
+**Supported document types:**
+- `invoice` - Commercial invoice
+- `purchase_order` - Purchase order
+- `delivery_slip` - Delivery receipt
+- `contract` - Service or purchase contract
+- `customs_declaration` - Customs declaration
+- `bill_of_lading` - Shipping document
+- `others` - Other supporting documents
+
+<Note>
+Transaction documents are stored with the quote and carried through to the payout for compliance and auditing purposes.
+</Note>
+
+## Quote Lifecycle Example
+
+Here's a complete example showing the quote-to-payout flow:
+
+```typescript
+// Step 1: Create a quote
+const { data: quote, error: quoteError } = await blindpay.quotes.create({
+  bank_account_id: "ba_abc123",
+  currency_type: "receiver",
+  request_amount: 5000, // Receiver gets exactly 5000 BRL
+  network: "base",
+  token: "USDC",
+  cover_fees: false,
+  description: "Salary payment - January 2024"
+});
+
+if (quoteError) {
+  console.error("Failed to create quote:", quoteError.message);
+  return;
+}
+
+// Step 2: Show the quote to the user
+console.log("Quote Details:");
+console.log(`You'll send: ${quote.sender_amount} USDC`);
+console.log(`Receiver gets: ${quote.receiver_amount} BRL`);
+console.log(`Exchange rate: ${quote.blindpay_quotation} BRL/USD`);
+console.log(`Quote expires: ${new Date(quote.expires_at * 1000).toLocaleString()}`);
+
+// Step 3: Wait for user confirmation
+// (In a real app, show a confirmation UI)
+
+// Step 4: Check if quote is still valid
+const now = Date.now() / 1000;
+if (now > quote.expires_at) {
+  console.error("Quote expired, please create a new one");
+  return;
+}
+
+// Step 5: Create the payout using the quote
+const { data: payout, error: payoutError } = await blindpay.payouts.createEvm({
+  quote_id: quote.id,
+  sender_wallet_address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+});
+
+if (payoutError) {
+  console.error("Failed to create payout:", payoutError.message);
+  return;
+}
+
+console.log("Payout created:", payout.id);
+console.log("Status:", payout.status);
+```
+
+## Best Practices
+
+1. **Create quotes just-in-time**: Create quotes right before the user confirms the transaction to minimize the chance of expiration.
+
+2. **Display all amounts clearly**: Show both the sender amount (crypto) and receiver amount (fiat) to avoid confusion.
+
+3. **Show the exchange rate**: Display the `blindpay_quotation` so users understand the conversion rate.
+
+4. **Handle expiration gracefully**: If a quote expires during user confirmation, automatically create a new quote with updated rates.
+
+5. **Use FX rate preview for calculators**: Use `getFxRate()` for real-time calculators, and only create a quote when the user is ready to transact.
+
+6. **Consider the cover_fees setting carefully**: Choose the option that makes sense for your use case - payroll typically uses `cover_fees: false` to guarantee receiver amounts.
+
+7. **Store quote IDs**: Keep track of quote IDs for reconciliation and support purposes.
+
+8. **Add meaningful descriptions**: Use the description field for internal tracking and to help receivers identify the payment.

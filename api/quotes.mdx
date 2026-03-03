@@ -1,0 +1,238 @@
+---
+title: Quotes
+description: Methods for creating payout quotes and retrieving exchange rates
+---
+
+The Quotes resource provides methods to create quotes for crypto-to-fiat conversions (payouts) and retrieve foreign exchange rates.
+
+## create
+
+Create a quote for a payout transaction. The quote locks in an exchange rate, fee structure, and payment details for a limited time.
+
+```typescript
+const response = await blindpay.quotes.create({
+  bank_account_id: 'ba_1234567890',
+  currency_type: 'receiver',
+  cover_fees: false,
+  request_amount: 1000,
+  network: 'base',
+  token: 'USDC',
+  description: 'Invoice payment #12345',
+  transaction_document_file: 'https://example.com/invoice.pdf',
+  transaction_document_type: 'invoice',
+  transaction_document_id: 'INV-12345',
+  partner_fee_id: null
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(`Quote ID: ${response.data.id}`);
+  console.log(`Rate: ${response.data.commercial_quotation}`);
+  console.log(`Sender amount: ${response.data.sender_amount} ${response.data.token || 'USDC'}`);
+  console.log(`Receiver amount: ${response.data.receiver_amount}`);
+  console.log(`Expires at: ${new Date(response.data.expires_at * 1000)}`);
+}
+```
+
+### Parameters
+
+<ParamField body="bank_account_id" type="string" required>
+  ID of the beneficiary's bank account that will receive the fiat funds.
+</ParamField>
+
+<ParamField body="currency_type" type="'sender' | 'receiver'" required>
+  Whether the `request_amount` is in stablecoin (`sender`) or fiat currency (`receiver`).
+</ParamField>
+
+<ParamField body="cover_fees" type="boolean" required>
+  Whether fees should be covered by the sender (`true`) or deducted from the receiver amount (`false`).
+</ParamField>
+
+<ParamField body="request_amount" type="number" required>
+  The amount to quote. Interpreted based on `currency_type`.
+</ParamField>
+
+<ParamField body="network" type="Network" required>
+  Blockchain network to use for the transaction. Supported networks:
+  - **EVM**: `base`, `arbitrum`, `polygon`, `ethereum`, `sepolia`, `arbitrum_sepolia`, `base_sepolia`, `polygon_amoy`
+  - **Stellar**: `stellar`, `stellar_testnet`
+  - **Other**: `tron`, `solana`, `solana_devnet`
+</ParamField>
+
+<ParamField body="token" type="'USDC' | 'USDT' | 'USDB'" optional>
+  The stablecoin token to send. If not specified, defaults to the network's primary stablecoin.
+</ParamField>
+
+<ParamField body="description" type="string" optional>
+  Description of the transaction purpose.
+</ParamField>
+
+<ParamField body="partner_fee_id" type="string" optional>
+  ID of the partner fee configuration to apply, or `null` for no partner fee.
+</ParamField>
+
+<ParamField body="transaction_document_file" type="string" required>
+  URL or base64-encoded document supporting the transaction (e.g., invoice, contract).
+</ParamField>
+
+<ParamField body="transaction_document_id" type="string" optional>
+  Document identifier or number (e.g., invoice number).
+</ParamField>
+
+<ParamField body="transaction_document_type" type="TransactionDocumentType" optional>
+  Type of supporting document:
+  - `invoice`: Commercial invoice
+  - `purchase_order`: Purchase order
+  - `delivery_slip`: Delivery receipt
+  - `contract`: Legal contract
+  - `customs_declaration`: Customs documentation
+  - `bill_of_lading`: Shipping document
+  - `others`: Other document types
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="CreateQuoteResponse">
+  The created quote details.
+
+  <ResponseField name="id" type="string">
+    Unique identifier for the quote.
+  </ResponseField>
+
+  <ResponseField name="expires_at" type="number">
+    Unix timestamp (in seconds) when the quote expires.
+  </ResponseField>
+
+  <ResponseField name="commercial_quotation" type="number">
+    The commercial market exchange rate for the transaction.
+  </ResponseField>
+
+  <ResponseField name="blindpay_quotation" type="number">
+    The BlindPay exchange rate including fees and spread.
+  </ResponseField>
+
+  <ResponseField name="receiver_amount" type="number">
+    Amount that will be received in fiat currency.
+  </ResponseField>
+
+  <ResponseField name="sender_amount" type="number">
+    Amount that needs to be sent in stablecoin.
+  </ResponseField>
+
+  <ResponseField name="receiver_local_amount" type="number" optional>
+    Local amount in the beneficiary's currency (if different from receiver_amount).
+  </ResponseField>
+
+  <ResponseField name="partner_fee_amount" type="number | null" optional>
+    Partner fee amount if applicable.
+  </ResponseField>
+
+  <ResponseField name="flat_fee" type="number | null" optional>
+    Flat fee charged for the transaction.
+  </ResponseField>
+
+  <ResponseField name="description" type="string" optional>
+    Transaction description.
+  </ResponseField>
+
+  <ResponseField name="contract" type="object | null" optional>
+    Smart contract details for EVM networks (required for approve transactions).
+
+    <ResponseField name="abi" type="object[]">
+      Contract ABI definition.
+    </ResponseField>
+
+    <ResponseField name="address" type="string">
+      Token contract address.
+    </ResponseField>
+
+    <ResponseField name="functionName" type="'approve'">
+      Function to call (approve).
+    </ResponseField>
+
+    <ResponseField name="blindpayContractAddress" type="string">
+      BlindPay's contract address to approve.
+    </ResponseField>
+
+    <ResponseField name="amount" type="string">
+      Amount to approve (in wei/smallest unit).
+    </ResponseField>
+
+    <ResponseField name="network" type="object">
+      Network details including name and chainId.
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+## getFxRate
+
+Retrieve the current foreign exchange rate between currencies without creating a quote. This is useful for displaying approximate rates to users before they commit to a transaction.
+
+```typescript
+const response = await blindpay.quotes.getFxRate({
+  currency_type: 'sender',
+  from: 'USDC',
+  to: 'BRL',
+  request_amount: 1000
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(`Commercial rate: ${response.data.commercial_quotation}`);
+  console.log(`BlindPay rate: ${response.data.blindpay_quotation}`);
+  console.log(`You'll receive approximately: ${response.data.result_amount} BRL`);
+  console.log(`Flat fee: ${response.data.instance_flat_fee}`);
+  console.log(`Percentage fee: ${response.data.instance_percentage_fee}%`);
+}
+```
+
+### Parameters
+
+<ParamField body="currency_type" type="'sender' | 'receiver'" required>
+  Whether the `request_amount` is in the source currency (`sender`) or destination currency (`receiver`).
+</ParamField>
+
+<ParamField body="from" type="'USDC' | 'USDT' | 'USDB'" required>
+  Source stablecoin for the conversion.
+</ParamField>
+
+<ParamField body="to" type="'BRL' | 'USD' | 'MXN' | 'COP' | 'ARS'" required>
+  Destination fiat currency for the conversion.
+  - `BRL`: Brazilian Real
+  - `USD`: US Dollar
+  - `MXN`: Mexican Peso
+  - `COP`: Colombian Peso
+  - `ARS`: Argentine Peso
+</ParamField>
+
+<ParamField body="request_amount" type="number" required>
+  The amount to convert. Interpreted based on `currency_type`.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="GetFxRateResponse">
+  Foreign exchange rate information.
+
+  <ResponseField name="commercial_quotation" type="number">
+    The commercial market exchange rate without fees.
+  </ResponseField>
+
+  <ResponseField name="blindpay_quotation" type="number">
+    The BlindPay exchange rate including fees and spread.
+  </ResponseField>
+
+  <ResponseField name="result_amount" type="number">
+    The resulting amount after conversion and fees.
+  </ResponseField>
+
+  <ResponseField name="instance_flat_fee" type="number | null" optional>
+    Flat fee charged by your instance (if applicable).
+  </ResponseField>
+
+  <ResponseField name="instance_percentage_fee" type="number">
+    Percentage fee charged by your instance.
+  </ResponseField>
+</ResponseField>

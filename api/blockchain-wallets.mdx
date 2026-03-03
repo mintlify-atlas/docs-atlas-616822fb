@@ -1,0 +1,373 @@
+---
+title: "Blockchain Wallets"
+description: "Manage blockchain wallets for receiving cryptocurrency payments"
+---
+
+## List Blockchain Wallets
+
+Retrieve all blockchain wallets for a receiver.
+
+```typescript
+const response = await blindpay.blockchainWallets.list(receiver_id);
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ResponseField name="data" type="array">
+  Array of blockchain wallet objects
+  
+  <Expandable title="Wallet Object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the blockchain wallet
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Name of the wallet
+    </ResponseField>
+    
+    <ResponseField name="network" type="Network">
+      Blockchain network (base, sepolia, arbitrum_sepolia, base_sepolia, arbitrum, polygon, polygon_amoy, ethereum, stellar, stellar_testnet, tron, solana, solana_devnet)
+    </ResponseField>
+    
+    <ResponseField name="address" type="string | undefined">
+      Wallet address (for account abstraction wallets)
+    </ResponseField>
+    
+    <ResponseField name="signature_tx_hash" type="string | undefined">
+      Transaction hash used for signature verification (for non-account abstraction wallets)
+    </ResponseField>
+    
+    <ResponseField name="is_account_abstraction" type="boolean">
+      Whether this wallet uses account abstraction
+    </ResponseField>
+    
+    <ResponseField name="receiver_id" type="string">
+      ID of the receiver who owns this wallet
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Create Blockchain Wallet with Address
+
+Create a blockchain wallet using an account abstraction address.
+
+```typescript
+const response = await blindpay.blockchainWallets.createWithAddress({
+  receiver_id: "rcv_123",
+  name: "My Wallet",
+  network: "base",
+  address: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
+});
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Name for the wallet
+</ParamField>
+
+<ParamField path="network" type="Network" required>
+  Blockchain network for the wallet
+</ParamField>
+
+<ParamField path="address" type="string" required>
+  Wallet address for account abstraction
+</ParamField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Response Object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the created wallet
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Name of the wallet
+    </ResponseField>
+    
+    <ResponseField name="network" type="Network">
+      Blockchain network
+    </ResponseField>
+    
+    <ResponseField name="address" type="string | undefined">
+      Wallet address
+    </ResponseField>
+    
+    <ResponseField name="signature_tx_hash" type="string | undefined">
+      Transaction hash (will be undefined for this method)
+    </ResponseField>
+    
+    <ResponseField name="is_account_abstraction" type="boolean">
+      Will be true for wallets created with this method
+    </ResponseField>
+    
+    <ResponseField name="receiver_id" type="string">
+      ID of the receiver who owns this wallet
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Create Blockchain Wallet with Hash
+
+Create a blockchain wallet using a transaction hash for signature verification.
+
+```typescript
+const response = await blindpay.blockchainWallets.createWithHash({
+  receiver_id: "rcv_123",
+  name: "My Wallet",
+  network: "ethereum",
+  signature_tx_hash: "0xabc123..."
+});
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="name" type="string" required>
+  Name for the wallet
+</ParamField>
+
+<ParamField path="network" type="Network" required>
+  Blockchain network for the wallet
+</ParamField>
+
+<ParamField path="signature_tx_hash" type="string" required>
+  Transaction hash for signature verification
+</ParamField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Response Object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the created wallet
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Name of the wallet
+    </ResponseField>
+    
+    <ResponseField name="network" type="Network">
+      Blockchain network
+    </ResponseField>
+    
+    <ResponseField name="address" type="string | undefined">
+      Wallet address (will be undefined for this method)
+    </ResponseField>
+    
+    <ResponseField name="signature_tx_hash" type="string | undefined">
+      Transaction hash used for verification
+    </ResponseField>
+    
+    <ResponseField name="is_account_abstraction" type="boolean">
+      Will be false for wallets created with this method
+    </ResponseField>
+    
+    <ResponseField name="receiver_id" type="string">
+      ID of the receiver who owns this wallet
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Get Blockchain Wallet
+
+Retrieve a specific blockchain wallet by ID.
+
+```typescript
+const response = await blindpay.blockchainWallets.get({
+  receiver_id: "rcv_123",
+  id: "wallet_123"
+});
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the blockchain wallet
+</ParamField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Wallet Object">
+    <ResponseField name="id" type="string">
+      Unique identifier for the blockchain wallet
+    </ResponseField>
+    
+    <ResponseField name="name" type="string">
+      Name of the wallet
+    </ResponseField>
+    
+    <ResponseField name="network" type="Network">
+      Blockchain network
+    </ResponseField>
+    
+    <ResponseField name="address" type="string | undefined">
+      Wallet address (for account abstraction wallets)
+    </ResponseField>
+    
+    <ResponseField name="signature_tx_hash" type="string | undefined">
+      Transaction hash used for signature verification
+    </ResponseField>
+    
+    <ResponseField name="is_account_abstraction" type="boolean">
+      Whether this wallet uses account abstraction
+    </ResponseField>
+    
+    <ResponseField name="receiver_id" type="string">
+      ID of the receiver who owns this wallet
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Delete Blockchain Wallet
+
+Delete a blockchain wallet.
+
+```typescript
+const response = await blindpay.blockchainWallets.delete({
+  receiver_id: "rcv_123",
+  id: "wallet_123"
+});
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The unique identifier of the blockchain wallet to delete
+</ParamField>
+
+<ResponseField name="data" type="void">
+  No data returned on successful deletion
+</ResponseField>
+
+## Get Wallet Message
+
+Retrieve a message to be signed for wallet verification.
+
+```typescript
+const response = await blindpay.blockchainWallets.getWalletMessage(receiver_id);
+```
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Response Object">
+    <ResponseField name="message" type="string">
+      The message to be signed for wallet verification
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Create Asset Trustline (Stellar)
+
+Create a trustline for an asset on Stellar network. Returns an XDR transaction to be signed.
+
+```typescript
+const response = await blindpay.blockchainWallets.createAssetTrustline(address);
+```
+
+<ParamField path="address" type="string" required>
+  The Stellar wallet address
+</ParamField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Response Object">
+    <ResponseField name="xdr" type="string">
+      The XDR-encoded transaction to be signed and submitted
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Mint USDB on Stellar
+
+Mint USDB tokens on the Stellar network.
+
+```typescript
+const response = await blindpay.blockchainWallets.mintUsdbStellar({
+  address: "GABC123...",
+  amount: "100.00",
+  signedXdr: "AAAAAgAAAAD..."
+});
+```
+
+<ParamField path="address" type="string" required>
+  The Stellar wallet address to receive USDB
+</ParamField>
+
+<ParamField path="amount" type="string" required>
+  Amount of USDB to mint
+</ParamField>
+
+<ParamField path="signedXdr" type="string" required>
+  The signed XDR transaction
+</ParamField>
+
+<ResponseField name="data" type="void">
+  No data returned on success
+</ResponseField>
+
+## Mint USDB on Solana
+
+Mint USDB tokens on the Solana network.
+
+```typescript
+const response = await blindpay.blockchainWallets.mintUsdbSolana({
+  address: "7xKXtg2CW...",
+  amount: "100.00"
+});
+```
+
+<ParamField path="address" type="string" required>
+  The Solana wallet address to receive USDB
+</ParamField>
+
+<ParamField path="amount" type="string" required>
+  Amount of USDB to mint
+</ParamField>
+
+<ResponseField name="data" type="void">
+  No data returned on success
+</ResponseField>
+
+## Prepare Solana Delegation Transaction
+
+Prepare a token delegation transaction on Solana. This allows BlindPay to manage tokens on behalf of the user.
+
+```typescript
+const response = await blindpay.blockchainWallets.prepareSolanaDelegationTransaction({
+  token_address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  amount: "100.00",
+  owner_address: "7xKXtg2CW..."
+});
+```
+
+<ParamField path="token_address" type="string" required>
+  The Solana token mint address
+</ParamField>
+
+<ParamField path="amount" type="string" required>
+  Amount to delegate
+</ParamField>
+
+<ParamField path="owner_address" type="string" required>
+  The wallet address that owns the tokens
+</ParamField>
+
+<ResponseField name="data" type="object">
+  <Expandable title="Response Object">
+    <ResponseField name="success" type="boolean">
+      Whether the transaction was prepared successfully
+    </ResponseField>
+    
+    <ResponseField name="transaction" type="string">
+      The base64-encoded transaction to be signed and submitted
+    </ResponseField>
+  </Expandable>
+</ResponseField>

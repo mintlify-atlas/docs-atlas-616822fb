@@ -1,0 +1,129 @@
+---
+title: BlindPay Node.js SDK
+description: Official Node.js SDK for BlindPay - Stablecoin API for global payments
+---
+
+# Welcome to BlindPay Node.js SDK
+
+The official Node.js SDK for [BlindPay](https://blindpay.com) - a powerful stablecoin API that enables seamless global payments through multiple blockchains and traditional payment rails.
+
+## What is BlindPay?
+
+BlindPay provides a unified API to send and receive payments globally using stablecoins (USDC, USDT, USDB) across multiple blockchain networks and traditional payment methods. Convert crypto to fiat and fiat to crypto with real-time FX rates and low fees.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Multiple Networks" icon="link">
+    Support for Ethereum, Base, Arbitrum, Polygon, Stellar, Tron, and Solana networks
+  </Card>
+  <Card title="Global Payment Rails" icon="globe">
+    ACH, Wire, PIX (Brazil), SPEI (Mexico), SWIFT, RTP and more traditional payment methods
+  </Card>
+  <Card title="Type-Safe API" icon="code">
+    Fully typed TypeScript SDK with autocomplete and compile-time type checking
+  </Card>
+  <Card title="Consistent Error Handling" icon="shield-check">
+    Predictable response format with data/error pattern for easy error handling
+  </Card>
+  <Card title="KYC/KYB Support" icon="user-check">
+    Built-in receiver management with standard and enhanced KYC/KYB verification
+  </Card>
+  <Card title="Real-Time FX Rates" icon="chart-line">
+    Get accurate foreign exchange rates for currency conversions
+  </Card>
+</CardGroup>
+
+## Quick Links
+
+<CardGroup cols={3}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get up and running in 5 minutes
+  </Card>
+  <Card title="API Reference" icon="book" href="/api/client">
+    Explore the complete API documentation
+  </Card>
+  <Card title="Guides" icon="map" href="/guides/payins">
+    Step-by-step guides for common use cases
+  </Card>
+</CardGroup>
+
+## Supported Networks
+
+The BlindPay SDK supports multiple blockchain networks for maximum flexibility:
+
+- **Ethereum** - The original EVM network
+- **Base** - Coinbase's L2 network (recommended for low fees)
+- **Arbitrum** - High-performance L2 network
+- **Polygon** - Fast and low-cost transactions
+- **Stellar** - Built for financial applications
+- **Tron** - High throughput blockchain
+- **Solana** - Ultra-fast blockchain network
+
+## Supported Stablecoins
+
+- **USDC** - USD Coin by Circle
+- **USDT** - Tether USD
+- **USDB** - USD Base
+
+## Supported Fiat Currencies & Rails
+
+- **USD** (United States Dollar) - ACH, Wire, RTP
+- **BRL** (Brazilian Real) - PIX
+- **MXN** (Mexican Peso) - SPEI
+- **COP** (Colombian Peso) - ACH COP
+- **ARS** (Argentine Peso) - Transfers
+- **International** - SWIFT transfers
+
+## Response Format
+
+All SDK methods return a consistent response format for predictable error handling:
+
+**Success Response:**
+```typescript
+{
+  data: YourDataType,
+  error: null
+}
+```
+
+**Error Response:**
+```typescript
+{
+  data: null,
+  error: {
+    message: "Error description"
+  }
+}
+```
+
+This pattern allows you to handle errors gracefully:
+
+```typescript
+const { data, error } = await blindpay.available.getRails();
+
+if (error) {
+  console.error('Operation failed:', error.message);
+  return;
+}
+
+// data is fully typed and safe to use
+console.log('Available rails:', data);
+```
+
+## Requirements
+
+- Node.js >= 18.x
+- TypeScript 5.x (optional, but recommended)
+
+## Getting Help
+
+If you need assistance or have questions:
+
+- Email: [gabriel@blindpay.com](mailto:gabriel@blindpay.com)
+- GitHub Issues: [blindpay-node issues](https://github.com/blindpaylabs/blindpay-node/issues)
+- Dashboard: [BlindPay Dashboard](https://app.blindpay.com)
+
+## License
+
+This SDK is licensed under the MIT License.

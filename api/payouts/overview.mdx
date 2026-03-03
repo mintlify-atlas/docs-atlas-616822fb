@@ -1,0 +1,513 @@
+---
+title: Payouts
+description: Methods for managing payout transactions
+---
+
+The Payouts resource provides methods to create and manage outgoing payments from crypto to fiat. Payouts support multiple blockchain networks (Stellar, EVM chains, Solana) and various fiat payment rails.
+
+## list
+
+Retrieve a list of all payouts for your instance.
+
+```typescript
+const response = await blindpay.payouts.list({
+  limit: '50',
+  offset: '0',
+  receiver_id: 'rcv_1234567890'
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(response.data.data);
+  console.log(response.data.pagination);
+}
+```
+
+### Parameters
+
+<ParamField query="limit" type="'10' | '50' | '100' | '200' | '1000'" optional>
+  Number of results to return per page.
+</ParamField>
+
+<ParamField query="offset" type="'0' | '10' | '50' | '100' | '200' | '1000'" optional>
+  Number of results to skip.
+</ParamField>
+
+<ParamField query="starting_after" type="string" optional>
+  Cursor for pagination. Returns results after this cursor.
+</ParamField>
+
+<ParamField query="ending_before" type="string" optional>
+  Cursor for pagination. Returns results before this cursor.
+</ParamField>
+
+<ParamField query="receiver_id" type="string" optional>
+  Filter payouts by receiver (beneficiary) ID.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="Payout[]">
+  Array of payout objects.
+
+  <ResponseField name="id" type="string">
+    Unique identifier for the payout.
+  </ResponseField>
+
+  <ResponseField name="receiver_id" type="string">
+    ID of the beneficiary receiving the funds.
+  </ResponseField>
+
+  <ResponseField name="status" type="'refunded' | 'processing' | 'completed' | 'failed' | 'on_hold'">
+    Current status of the payout transaction.
+  </ResponseField>
+
+  <ResponseField name="sender_wallet_address" type="string">
+    Blockchain wallet address sending the stablecoins.
+  </ResponseField>
+
+  <ResponseField name="signed_transaction" type="string">
+    Signed blockchain transaction.
+  </ResponseField>
+
+  <ResponseField name="quote_id" type="string">
+    ID of the quote used for this payout.
+  </ResponseField>
+
+  <ResponseField name="instance_id" type="string">
+    Your BlindPay instance ID.
+  </ResponseField>
+
+  <ResponseField name="network" type="Network">
+    Blockchain network used. Supported: `base`, `arbitrum`, `polygon`, `ethereum`, `stellar`, `tron`, `solana`, and testnets.
+  </ResponseField>
+
+  <ResponseField name="token" type="'USDC' | 'USDT' | 'USDB'">
+    Stablecoin token sent.
+  </ResponseField>
+
+  <ResponseField name="sender_amount" type="number">
+    Amount sent in stablecoin.
+  </ResponseField>
+
+  <ResponseField name="receiver_amount" type="number">
+    Amount received in fiat currency.
+  </ResponseField>
+
+  <ResponseField name="receiver_local_amount" type="number">
+    Local amount received by the beneficiary.
+  </ResponseField>
+
+  <ResponseField name="currency" type="string">
+    Fiat currency received (e.g., BRL, USD, MXN, COP, ARS).
+  </ResponseField>
+
+  <ResponseField name="commercial_quotation" type="number">
+    Commercial exchange rate applied.
+  </ResponseField>
+
+  <ResponseField name="blindpay_quotation" type="number">
+    BlindPay exchange rate applied.
+  </ResponseField>
+
+  <ResponseField name="partner_fee_amount" type="number">
+    Partner fee amount charged.
+  </ResponseField>
+
+  <ResponseField name="total_fee_amount" type="number">
+    Total fees charged for the transaction.
+  </ResponseField>
+
+  <ResponseField name="type" type="Rail">
+    Payment rail used. Options: `wire`, `ach`, `pix`, `spei_bitso`, `transfers_bitso`, `ach_cop_bitso`, `international_swift`, `rtp`.
+  </ResponseField>
+
+  <ResponseField name="description" type="string">
+    Transaction description.
+  </ResponseField>
+
+  <ResponseField name="name" type="string">
+    Beneficiary name.
+  </ResponseField>
+
+  <ResponseField name="first_name" type="string">
+    Beneficiary first name.
+  </ResponseField>
+
+  <ResponseField name="last_name" type="string">
+    Beneficiary last name.
+  </ResponseField>
+
+  <ResponseField name="legal_name" type="string">
+    Beneficiary legal name (for businesses).
+  </ResponseField>
+
+  <ResponseField name="account_class" type="'individual' | 'business'" optional>
+    Type of beneficiary account.
+  </ResponseField>
+
+  <ResponseField name="transaction_document_type" type="TransactionDocumentType">
+    Type of supporting document. Options: `invoice`, `purchase_order`, `delivery_slip`, `contract`, `customs_declaration`, `bill_of_lading`, `others`.
+  </ResponseField>
+
+  <ResponseField name="transaction_document_file" type="string">
+    URL or identifier of the transaction document.
+  </ResponseField>
+
+  <ResponseField name="transaction_document_id" type="string">
+    Document ID for the transaction.
+  </ResponseField>
+
+  <ResponseField name="has_virtual_account" type="boolean">
+    Whether the payout uses a virtual account.
+  </ResponseField>
+
+  <ResponseField name="tracking_transaction" type="PayoutTrackingTransaction">
+    Blockchain transaction tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_payment" type="PayoutTrackingPayment">
+    Fiat payment tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_liquidity" type="PayoutTrackingLiquidity">
+    Liquidity provider tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_complete" type="PayoutTrackingComplete">
+    Completion tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_partner_fee" type="PayoutTrackingPartnerFee">
+    Partner fee tracking information.
+  </ResponseField>
+
+  <ResponseField name="created_at" type="string">
+    ISO 8601 timestamp of when the payout was created.
+  </ResponseField>
+
+  <ResponseField name="updated_at" type="string">
+    ISO 8601 timestamp of when the payout was last updated.
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="pagination" type="PaginationMetadata">
+  Pagination information.
+
+  <ResponseField name="has_more" type="boolean">
+    Whether there are more results available.
+  </ResponseField>
+
+  <ResponseField name="next_page" type="string">
+    URL for the next page of results.
+  </ResponseField>
+
+  <ResponseField name="prev_page" type="string">
+    URL for the previous page of results.
+  </ResponseField>
+</ResponseField>
+
+## get
+
+Retrieve details of a specific payout transaction.
+
+```typescript
+const response = await blindpay.payouts.get('payout_1234567890');
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(response.data);
+}
+```
+
+### Parameters
+
+<ParamField path="payoutId" type="string" required>
+  The unique identifier of the payout to retrieve.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="Payout">
+  The payout object with all details (same structure as list response items).
+</ResponseField>
+
+## getTrack
+
+Retrieve tracking information for a payout transaction using an external endpoint that doesn't require authentication.
+
+```typescript
+const response = await blindpay.payouts.getTrack('payout_1234567890');
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(response.data.tracking_transaction);
+  console.log(response.data.tracking_payment);
+  console.log(response.data.tracking_liquidity);
+  console.log(response.data.tracking_complete);
+}
+```
+
+### Parameters
+
+<ParamField path="payoutId" type="string" required>
+  The unique identifier of the payout to track.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="Payout">
+  The payout object with tracking details.
+</ResponseField>
+
+## authorizeStellarToken
+
+Authorize a Stellar token for use in payout transactions. This is required before creating Stellar payouts with certain tokens.
+
+```typescript
+const response = await blindpay.payouts.authorizeStellarToken({
+  quote_id: 'qt_1234567890',
+  sender_wallet_address: 'GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(`Transaction hash: ${response.data.transaction_hash}`);
+}
+```
+
+### Parameters
+
+<ParamField body="quote_id" type="string" required>
+  ID of the payout quote.
+</ParamField>
+
+<ParamField body="sender_wallet_address" type="string" required>
+  Stellar wallet address that will send the tokens.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="AuthorizeStellarTokenResponse">
+  <ResponseField name="transaction_hash" type="string">
+    Hash of the authorization transaction on Stellar.
+  </ResponseField>
+</ResponseField>
+
+## createStellar
+
+Create a payout transaction on the Stellar network.
+
+```typescript
+const response = await blindpay.payouts.createStellar({
+  quote_id: 'qt_1234567890',
+  sender_wallet_address: 'GXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+  signed_transaction: '...' // Optional pre-signed transaction
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(`Payout ID: ${response.data.id}`);
+  console.log(`Status: ${response.data.status}`);
+}
+```
+
+### Parameters
+
+<ParamField body="quote_id" type="string" required>
+  ID of the payout quote to execute.
+</ParamField>
+
+<ParamField body="sender_wallet_address" type="string" required>
+  Stellar wallet address sending the stablecoins.
+</ParamField>
+
+<ParamField body="signed_transaction" type="string" optional>
+  Pre-signed Stellar transaction. If not provided, BlindPay will create and sign the transaction.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="CreateStellarPayoutResponse">
+  <ResponseField name="id" type="string">
+    Unique identifier for the created payout.
+  </ResponseField>
+
+  <ResponseField name="status" type="'refunded' | 'processing' | 'completed' | 'failed' | 'on_hold'">
+    Current status of the payout.
+  </ResponseField>
+
+  <ResponseField name="sender_wallet_address" type="string">
+    Stellar wallet address sending the funds.
+  </ResponseField>
+
+  <ResponseField name="receiver_id" type="string">
+    ID of the beneficiary receiving the funds.
+  </ResponseField>
+
+  <ResponseField name="tracking_transaction" type="PayoutTrackingTransaction" optional>
+    Blockchain transaction tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_payment" type="PayoutTrackingPayment" optional>
+    Fiat payment tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_liquidity" type="PayoutTrackingLiquidity" optional>
+    Liquidity provider tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_complete" type="PayoutTrackingComplete" optional>
+    Completion tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_partner_fee" type="PayoutTrackingPartnerFee" optional>
+    Partner fee tracking information.
+  </ResponseField>
+</ResponseField>
+
+## createEvm
+
+Create a payout transaction on EVM-compatible blockchain networks (Ethereum, Base, Arbitrum, Polygon).
+
+```typescript
+const response = await blindpay.payouts.createEvm({
+  quote_id: 'qt_1234567890',
+  sender_wallet_address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb'
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(`Payout ID: ${response.data.id}`);
+  console.log(`Status: ${response.data.status}`);
+}
+```
+
+### Parameters
+
+<ParamField body="quote_id" type="string" required>
+  ID of the payout quote to execute.
+</ParamField>
+
+<ParamField body="sender_wallet_address" type="string" required>
+  EVM wallet address sending the stablecoins (must start with 0x).
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="CreateEvmPayoutResponse">
+  <ResponseField name="id" type="string">
+    Unique identifier for the created payout.
+  </ResponseField>
+
+  <ResponseField name="status" type="'refunded' | 'processing' | 'completed' | 'failed' | 'on_hold'">
+    Current status of the payout.
+  </ResponseField>
+
+  <ResponseField name="sender_wallet_address" type="string">
+    EVM wallet address sending the funds.
+  </ResponseField>
+
+  <ResponseField name="receiver_id" type="string">
+    ID of the beneficiary receiving the funds.
+  </ResponseField>
+
+  <ResponseField name="tracking_transaction" type="PayoutTrackingTransaction" optional>
+    Blockchain transaction tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_payment" type="PayoutTrackingPayment" optional>
+    Fiat payment tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_liquidity" type="PayoutTrackingLiquidity" optional>
+    Liquidity provider tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_complete" type="PayoutTrackingComplete" optional>
+    Completion tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_partner_fee" type="PayoutTrackingPartnerFee" optional>
+    Partner fee tracking information.
+  </ResponseField>
+</ResponseField>
+
+## createSolana
+
+Create a payout transaction on the Solana network.
+
+```typescript
+const response = await blindpay.payouts.createSolana({
+  quote_id: 'qt_1234567890',
+  sender_wallet_address: 'ABC123...XYZ',
+  signed_transaction: null // Or provide a pre-signed transaction
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(`Payout ID: ${response.data.id}`);
+  console.log(`Status: ${response.data.status}`);
+}
+```
+
+### Parameters
+
+<ParamField body="quote_id" type="string" required>
+  ID of the payout quote to execute.
+</ParamField>
+
+<ParamField body="sender_wallet_address" type="string" required>
+  Solana wallet address sending the stablecoins.
+</ParamField>
+
+<ParamField body="signed_transaction" type="string | null" required>
+  Pre-signed Solana transaction, or `null` if BlindPay should create and sign the transaction.
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="CreateSolanaPayoutResponse">
+  <ResponseField name="id" type="string">
+    Unique identifier for the created payout.
+  </ResponseField>
+
+  <ResponseField name="status" type="'refunded' | 'processing' | 'completed' | 'failed' | 'on_hold'">
+    Current status of the payout.
+  </ResponseField>
+
+  <ResponseField name="sender_wallet_address" type="string">
+    Solana wallet address sending the funds.
+  </ResponseField>
+
+  <ResponseField name="receiver_id" type="string | null">
+    ID of the beneficiary receiving the funds.
+  </ResponseField>
+
+  <ResponseField name="tracking_transaction" type="PayoutTrackingTransaction">
+    Blockchain transaction tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_payment" type="PayoutTrackingPayment">
+    Fiat payment tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_complete" type="PayoutTrackingComplete">
+    Completion tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_partner_fee" type="PayoutTrackingPartnerFee" optional>
+    Partner fee tracking information.
+  </ResponseField>
+
+  <ResponseField name="tracking_liquidity" type="PayoutTrackingLiquidity" optional>
+    Liquidity provider tracking information.
+  </ResponseField>
+</ResponseField>

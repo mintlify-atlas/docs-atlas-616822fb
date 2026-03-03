@@ -1,0 +1,323 @@
+---
+title: Individual Receivers
+description: Create individual receivers with standard or enhanced KYC
+---
+
+Individual receivers are natural persons who can receive payouts. BlindPay supports two levels of KYC verification for individuals:
+
+- **Standard KYC**: Basic verification with standard transaction limits
+- **Enhanced KYC**: Advanced verification with higher transaction limits and additional compliance requirements
+
+## Create Individual with Standard KYC
+
+Create an individual receiver with standard KYC verification.
+
+```typescript
+const response = await blindpay.receivers.createIndividualWithStandardKYC({
+  country: "US",
+  email: "john.doe@example.com",
+  first_name: "John",
+  last_name: "Doe",
+  date_of_birth: "1990-05-15",
+  tax_id: "123-45-6789",
+  phone_number: "+1-555-0100",
+  address_line_1: "123 Main St",
+  address_line_2: "Apt 4B",
+  city: "New York",
+  state_province_region: "NY",
+  postal_code: "10001",
+  id_doc_type: "DRIVERS",
+  id_doc_country: "US",
+  id_doc_front_file: "file_abc123",
+  id_doc_back_file: "file_def456",
+  proof_of_address_doc_type: "UTILITY_BILL",
+  proof_of_address_doc_file: "file_ghi789",
+  account_purpose: "personal_or_living_expenses",
+  ip_address: "192.168.1.1"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("Individual receiver created:", response.data.id);
+}
+```
+
+### Required Parameters
+
+<ParamField body="country" type="string" required>
+  Two-letter ISO country code of the receiver's residence
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Receiver's email address
+</ParamField>
+
+### Optional Parameters
+
+While technically optional in the API, many of these fields are required for successful KYC verification.
+
+<ParamField body="first_name" type="string">
+  Receiver's legal first name
+</ParamField>
+
+<ParamField body="last_name" type="string">
+  Receiver's legal last name
+</ParamField>
+
+<ParamField body="date_of_birth" type="string">
+  Date of birth in YYYY-MM-DD format
+</ParamField>
+
+<ParamField body="tax_id" type="string">
+  Tax identification number (SSN for US, TIN, etc.)
+</ParamField>
+
+<ParamField body="phone_number" type="string">
+  Phone number in international format (e.g., +1-555-0100)
+</ParamField>
+
+<ParamField body="address_line_1" type="string">
+  First line of street address
+</ParamField>
+
+<ParamField body="address_line_2" type="string">
+  Second line of street address (apartment, suite, etc.)
+</ParamField>
+
+<ParamField body="city" type="string">
+  City name
+</ParamField>
+
+<ParamField body="state_province_region" type="string">
+  State, province, or region (use two-letter state codes for US)
+</ParamField>
+
+<ParamField body="postal_code" type="string">
+  Postal or ZIP code
+</ParamField>
+
+<ParamField body="id_doc_type" type="string">
+  Type of identification document:
+  - `"PASSPORT"` - Passport
+  - `"ID_CARD"` - National ID card
+  - `"DRIVERS"` - Driver's license
+</ParamField>
+
+<ParamField body="id_doc_country" type="string">
+  Two-letter ISO country code of the document-issuing country
+</ParamField>
+
+<ParamField body="id_doc_front_file" type="string">
+  File ID or URL of the front of the ID document
+</ParamField>
+
+<ParamField body="id_doc_back_file" type="string">
+  File ID or URL of the back of the ID document (required for ID cards and driver's licenses)
+</ParamField>
+
+<ParamField body="proof_of_address_doc_type" type="string">
+  Type of proof of address document:
+  - `"UTILITY_BILL"` - Utility bill
+  - `"BANK_STATEMENT"` - Bank statement
+  - `"RENTAL_AGREEMENT"` - Lease or rental agreement
+  - `"TAX_DOCUMENT"` - Tax document
+  - `"GOVERNMENT_CORRESPONDENCE"` - Official government letter
+</ParamField>
+
+<ParamField body="proof_of_address_doc_file" type="string">
+  File ID or URL of the proof of address document (must be dated within last 3 months)
+</ParamField>
+
+<ParamField body="selfie_file" type="string">
+  File ID or URL of a selfie photo for identity verification
+</ParamField>
+
+<ParamField body="account_purpose" type="string">
+  Purpose of the account:
+  - `"charitable_donations"` - Charitable donations
+  - `"ecommerce_retail_payments"` - E-commerce/retail payments
+  - `"investment_purposes"` - Investment purposes
+  - `"business_expenses"` - Business expenses
+  - `"payments_to_friends_or_family_abroad"` - Payments to friends/family abroad
+  - `"personal_or_living_expenses"` - Personal or living expenses
+  - `"protect_wealth"` - Wealth protection
+  - `"purchase_goods_and_services"` - Purchase goods and services
+  - `"receive_payments_for_goods_and_services"` - Receive payments for goods/services
+  - `"tax_optimization"` - Tax optimization
+  - `"third_party_money_transmission"` - Third-party money transmission
+  - `"payroll"` - Payroll
+  - `"treasury_management"` - Treasury management
+  - `"other"` - Other purpose
+</ParamField>
+
+<ParamField body="source_of_funds_doc_type" type="string">
+  Type of source of funds:
+  - `"business_income"` - Business income
+  - `"gambling_proceeds"` - Gambling proceeds
+  - `"gifts"` - Gifts
+  - `"government_benefits"` - Government benefits
+  - `"inheritance"` - Inheritance
+  - `"investment_loans"` - Investment/loans
+  - `"pension_retirement"` - Pension/retirement
+  - `"salary"` - Salary
+  - `"sale_of_assets_real_estate"` - Sale of assets/real estate
+  - `"savings"` - Savings
+  - `"esops"` - ESOPs
+  - `"investment_proceeds"` - Investment proceeds
+  - `"someone_else_funds"` - Someone else's funds
+</ParamField>
+
+<ParamField body="source_of_funds_doc_file" type="string">
+  File ID or URL of supporting documentation for source of funds
+</ParamField>
+
+<ParamField body="source_of_wealth" type="string">
+  Source of accumulated wealth:
+  - `"business_dividends_or_profits"` - Business dividends or profits
+  - `"investments"` - Investments
+  - `"asset_sales"` - Asset sales
+  - `"client_investor_contributions"` - Client/investor contributions
+  - `"gambling"` - Gambling
+  - `"charitable_contributions"` - Charitable contributions
+  - `"inheritance"` - Inheritance
+  - `"affiliate_or_royalty_income"` - Affiliate or royalty income
+</ParamField>
+
+<ParamField body="external_id" type="string">
+  Your internal identifier for this receiver
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  URL to a profile image for this receiver
+</ParamField>
+
+<ParamField body="ip_address" type="string">
+  IP address from which the receiver is signing up
+</ParamField>
+
+<ParamField body="tos_id" type="string">
+  ID of the terms of service accepted by the receiver
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the created individual receiver
+</ResponseField>
+
+---
+
+## Create Individual with Enhanced KYC
+
+Create an individual receiver with enhanced KYC verification for higher transaction limits.
+
+```typescript
+const response = await blindpay.receivers.createIndividualWithEnhancedKYC({
+  country: "US",
+  email: "jane.smith@example.com",
+  first_name: "Jane",
+  last_name: "Smith",
+  date_of_birth: "1985-08-22",
+  tax_id: "987-65-4321",
+  phone_number: "+1-555-0200",
+  address_line_1: "456 Oak Avenue",
+  city: "Los Angeles",
+  state_province_region: "CA",
+  postal_code: "90001",
+  id_doc_type: "PASSPORT",
+  id_doc_country: "US",
+  id_doc_front_file: "file_xyz123",
+  proof_of_address_doc_type: "BANK_STATEMENT",
+  proof_of_address_doc_file: "file_uvw456",
+  purpose_of_transactions: "business_transactions",
+  source_of_funds_doc_type: "salary",
+  source_of_funds_doc_file: "file_rst789",
+  account_purpose: "receive_payments_for_goods_and_services"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("Individual receiver created:", response.data.id);
+}
+```
+
+### Required Parameters
+
+<ParamField body="country" type="string" required>
+  Two-letter ISO country code of the receiver's residence
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  Receiver's email address
+</ParamField>
+
+### Optional Parameters
+
+Enhanced KYC accepts the same parameters as Standard KYC, plus additional fields:
+
+<ParamField body="purpose_of_transactions" type="string">
+  Primary purpose of transactions (enhanced KYC only):
+  - `"business_transactions"` - Business transactions
+  - `"charitable_donations"` - Charitable donations
+  - `"investment_purposes"` - Investment purposes
+  - `"payments_to_friends_or_family_abroad"` - Payments to friends/family abroad
+  - `"personal_or_living_expenses"` - Personal or living expenses
+  - `"protect_wealth"` - Protect wealth
+  - `"purchase_good_and_services"` - Purchase goods and services
+  - `"receive_payment_for_freelancing"` - Receive payment for freelancing
+  - `"receive_salary"` - Receive salary
+  - `"other"` - Other purpose (requires explanation)
+</ParamField>
+
+<ParamField body="purpose_of_transactions_explanation" type="string">
+  Required if `purpose_of_transactions` is `"other"`. Explain the purpose of transactions.
+</ParamField>
+
+All other parameters from Standard KYC (first_name, last_name, date_of_birth, tax_id, phone_number, address fields, ID documents, proof of address, etc.) are also supported.
+
+### Response
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the created individual receiver
+</ResponseField>
+
+---
+
+## KYC Status and Verification
+
+After creating an individual receiver, the KYC verification process begins automatically. You can check the verification status by retrieving the receiver:
+
+```typescript
+const response = await blindpay.receivers.get("rcv_123abc");
+
+if (response.data) {
+  console.log("KYC Status:", response.data.kyc_status);
+  console.log("KYC Warnings:", response.data.kyc_warnings);
+}
+```
+
+The `kyc_status` field indicates the current verification state, and `kyc_warnings` contains any issues that need to be resolved.
+
+## Document Requirements
+
+### Standard KYC Documents
+
+1. **Government-issued ID**: Front and back (if applicable) of passport, national ID card, or driver's license
+2. **Proof of Address**: Recent utility bill, bank statement, rental agreement, tax document, or government correspondence (must be dated within 3 months)
+3. **Selfie**: Optional but recommended for faster verification
+
+### Enhanced KYC Additional Documents
+
+In addition to Standard KYC documents:
+
+1. **Source of Funds Documentation**: Pay stubs, investment statements, business income records, etc.
+2. **Purpose of Transactions**: Detailed explanation of how the account will be used
+
+## Transaction Limits
+
+- **Standard KYC**: Lower transaction limits suitable for personal use
+- **Enhanced KYC**: Higher transaction limits for business use or high-value transactions
+
+To increase limits beyond the default, use the `requestLimitIncrease` method with supporting documentation.

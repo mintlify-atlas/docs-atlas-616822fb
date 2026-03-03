@@ -1,0 +1,204 @@
+---
+title: 'Instances'
+description: 'Manage your BlindPay instance settings and members'
+---
+
+## Get Instance Members
+
+Retrieve a list of all members in your instance.
+
+```typescript
+const response = await blindpay.instances.getMembers();
+```
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of instance member objects
+  
+  <Expandable title="Member object">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the member
+    </ResponseField>
+    
+    <ResponseField name="email" type="string" required>
+      Member's email address
+    </ResponseField>
+    
+    <ResponseField name="first_name" type="string" required>
+      Member's first name
+    </ResponseField>
+    
+    <ResponseField name="middle_name" type="string" required>
+      Member's middle name
+    </ResponseField>
+    
+    <ResponseField name="last_name" type="string" required>
+      Member's last name
+    </ResponseField>
+    
+    <ResponseField name="image_url" type="string" required>
+      URL to the member's profile image
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string" required>
+      ISO 8601 timestamp of when the member was created
+    </ResponseField>
+    
+    <ResponseField name="role" type="string" required>
+      Member's role in the instance. One of: `owner`, `admin`, `finance`, `checker`, `operations`, `developer`, `viewer`
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "data": [
+    {
+      "id": "mem_1234567890",
+      "email": "john.doe@example.com",
+      "first_name": "John",
+      "middle_name": "",
+      "last_name": "Doe",
+      "image_url": "https://example.com/avatar.jpg",
+      "created_at": "2024-01-15T10:30:00Z",
+      "role": "admin"
+    }
+  ],
+  "error": null
+}
+```
+</ResponseExample>
+
+## Update Instance
+
+Update your instance settings.
+
+```typescript
+const response = await blindpay.instances.update({
+  name: "My Company",
+  receiver_invite_redirect_urL: "https://example.com/welcome"
+});
+```
+
+### Parameters
+
+<ParamField path="name" type="string" required>
+  The name of your instance
+</ParamField>
+
+<ParamField path="receiver_invite_redirect_urL" type="string">
+  URL to redirect receivers after they accept an invite
+</ParamField>
+
+### Response
+
+Returns a success response with no data on successful update.
+
+<ResponseExample>
+```json
+{
+  "data": null,
+  "error": null
+}
+```
+</ResponseExample>
+
+## Delete Instance
+
+Permanently delete your instance.
+
+<Warning>
+This action cannot be undone. All data associated with the instance will be permanently deleted.
+</Warning>
+
+```typescript
+const response = await blindpay.instances.delete();
+```
+
+### Response
+
+Returns a success response with no data on successful deletion.
+
+<ResponseExample>
+```json
+{
+  "data": null,
+  "error": null
+}
+```
+</ResponseExample>
+
+## Delete Instance Member
+
+Remove a member from your instance.
+
+```typescript
+const response = await blindpay.instances.deleteMember("mem_1234567890");
+```
+
+### Parameters
+
+<ParamField path="memberId" type="string" required>
+  The ID of the member to remove
+</ParamField>
+
+### Response
+
+Returns a success response with no data on successful deletion.
+
+<ResponseExample>
+```json
+{
+  "data": null,
+  "error": null
+}
+```
+</ResponseExample>
+
+## Update Member Role
+
+Update a member's role in the instance.
+
+```typescript
+const response = await blindpay.instances.updateMemberRole({
+  memberId: "mem_1234567890",
+  role: "developer"
+});
+```
+
+### Parameters
+
+<ParamField path="memberId" type="string" required>
+  The ID of the member to update
+</ParamField>
+
+<ParamField path="role" type="string" required>
+  The new role for the member. One of: `owner`, `admin`, `finance`, `checker`, `operations`, `developer`, `viewer`
+</ParamField>
+
+### Response
+
+Returns a success response with no data on successful update.
+
+<ResponseExample>
+```json
+{
+  "data": null,
+  "error": null
+}
+```
+</ResponseExample>
+
+## Member Roles
+
+The following roles are available for instance members:
+
+- **owner** - Full access to all features and settings
+- **admin** - Administrative access to manage the instance
+- **finance** - Access to financial operations and reporting
+- **checker** - Ability to review and approve transactions
+- **operations** - Access to operational features
+- **developer** - Access to API keys and developer tools
+- **viewer** - Read-only access to the instance

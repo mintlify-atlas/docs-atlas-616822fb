@@ -1,0 +1,943 @@
+---
+title: Receivers Overview
+description: Manage receivers for payouts with the BlindPay Node.js SDK
+---
+
+Receivers represent individuals or businesses who receive funds through the BlindPay platform. Each receiver must complete KYC/KYB verification before they can receive payouts.
+
+## List Receivers
+
+Retrieve all receivers for your instance.
+
+```typescript
+const response = await blindpay.receivers.list();
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(response.data); // Array of receivers
+}
+```
+
+### Response
+
+<ResponseField name="data" type="array">
+  Array of receiver objects (individual or business)
+  
+  <Expandable title="Individual Receiver (Standard KYC)">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the receiver
+    </ResponseField>
+    
+    <ResponseField name="type" type="string" required>
+      Always `"individual"`
+    </ResponseField>
+    
+    <ResponseField name="kyc_type" type="string" required>
+      Always `"standard"`
+    </ResponseField>
+    
+    <ResponseField name="kyc_status" type="string" required>
+      Current KYC verification status
+    </ResponseField>
+    
+    <ResponseField name="kyc_warnings" type="array" required>
+      Array of KYC warnings or verification issues
+      
+      <Expandable title="Warning Object">
+        <ResponseField name="code" type="string | null">
+          Warning code
+        </ResponseField>
+        
+        <ResponseField name="message" type="string | null">
+          Human-readable warning message
+        </ResponseField>
+        
+        <ResponseField name="resolution_status" type="string | null">
+          Status of warning resolution
+        </ResponseField>
+        
+        <ResponseField name="warning_id" type="string | null">
+          Unique identifier for the warning
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="is_tos_accepted" type="boolean" required>
+      Whether receiver has accepted terms of service
+    </ResponseField>
+    
+    <ResponseField name="email" type="string" required>
+      Receiver's email address
+    </ResponseField>
+    
+    <ResponseField name="first_name" type="string" required>
+      Receiver's first name
+    </ResponseField>
+    
+    <ResponseField name="last_name" type="string" required>
+      Receiver's last name
+    </ResponseField>
+    
+    <ResponseField name="date_of_birth" type="string" required>
+      Date of birth in YYYY-MM-DD format
+    </ResponseField>
+    
+    <ResponseField name="tax_id" type="string" required>
+      Tax identification number (SSN, TIN, etc.)
+    </ResponseField>
+    
+    <ResponseField name="phone_number" type="string" required>
+      Receiver's phone number
+    </ResponseField>
+    
+    <ResponseField name="address_line_1" type="string" required>
+      First line of street address
+    </ResponseField>
+    
+    <ResponseField name="address_line_2" type="string | null">
+      Second line of street address
+    </ResponseField>
+    
+    <ResponseField name="city" type="string" required>
+      City
+    </ResponseField>
+    
+    <ResponseField name="state_province_region" type="string" required>
+      State, province, or region
+    </ResponseField>
+    
+    <ResponseField name="country" type="string" required>
+      Two-letter ISO country code
+    </ResponseField>
+    
+    <ResponseField name="postal_code" type="string" required>
+      Postal or ZIP code
+    </ResponseField>
+    
+    <ResponseField name="id_doc_type" type="string" required>
+      Type of identification document: `"PASSPORT"`, `"ID_CARD"`, or `"DRIVERS"`
+    </ResponseField>
+    
+    <ResponseField name="id_doc_country" type="string" required>
+      Country of issuance for ID document
+    </ResponseField>
+    
+    <ResponseField name="id_doc_front_file" type="string" required>
+      URL or file ID for front of ID document
+    </ResponseField>
+    
+    <ResponseField name="id_doc_back_file" type="string" required>
+      URL or file ID for back of ID document
+    </ResponseField>
+    
+    <ResponseField name="proof_of_address_doc_type" type="string" required>
+      Type of proof of address document
+    </ResponseField>
+    
+    <ResponseField name="proof_of_address_doc_file" type="string" required>
+      URL or file ID for proof of address
+    </ResponseField>
+    
+    <ResponseField name="ip_address" type="string | null">
+      IP address from which receiver signed up
+    </ResponseField>
+    
+    <ResponseField name="image_url" type="string | null">
+      URL to receiver's profile image
+    </ResponseField>
+    
+    <ResponseField name="aiprise_validation_key" type="string" required>
+      Validation key for compliance verification
+    </ResponseField>
+    
+    <ResponseField name="instance_id" type="string" required>
+      Associated instance ID
+    </ResponseField>
+    
+    <ResponseField name="tos_id" type="string | null">
+      ID of accepted terms of service
+    </ResponseField>
+    
+    <ResponseField name="limit" type="object" required>
+      Transaction limits for this receiver
+      
+      <Expandable title="Limit Object">
+        <ResponseField name="per_transaction" type="number" required>
+          Maximum amount per transaction
+        </ResponseField>
+        
+        <ResponseField name="daily" type="number" required>
+          Maximum daily transaction amount
+        </ResponseField>
+        
+        <ResponseField name="monthly" type="number" required>
+          Maximum monthly transaction amount
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string" required>
+      ISO 8601 timestamp of creation
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string" required>
+      ISO 8601 timestamp of last update
+    </ResponseField>
+  </Expandable>
+  
+  <Expandable title="Business Receiver (Standard KYB)">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the receiver
+    </ResponseField>
+    
+    <ResponseField name="type" type="string" required>
+      Always `"business"`
+    </ResponseField>
+    
+    <ResponseField name="kyc_type" type="string" required>
+      Always `"standard"`
+    </ResponseField>
+    
+    <ResponseField name="kyc_status" type="string" required>
+      Current KYB verification status
+    </ResponseField>
+    
+    <ResponseField name="kyc_warnings" type="array" required>
+      Array of KYB warnings or verification issues
+    </ResponseField>
+    
+    <ResponseField name="is_tos_accepted" type="boolean" required>
+      Whether business has accepted terms of service
+    </ResponseField>
+    
+    <ResponseField name="is_fbo" type="boolean" required>
+      Whether this is a For Benefit Of (FBO) account
+    </ResponseField>
+    
+    <ResponseField name="email" type="string" required>
+      Business email address
+    </ResponseField>
+    
+    <ResponseField name="legal_name" type="string" required>
+      Legal business name
+    </ResponseField>
+    
+    <ResponseField name="alternate_name" type="string | null">
+      DBA or alternate business name
+    </ResponseField>
+    
+    <ResponseField name="formation_date" type="string" required>
+      Business formation date in YYYY-MM-DD format
+    </ResponseField>
+    
+    <ResponseField name="tax_id" type="string" required>
+      Business tax identification number (EIN, etc.)
+    </ResponseField>
+    
+    <ResponseField name="phone_number" type="string | null">
+      Business phone number
+    </ResponseField>
+    
+    <ResponseField name="website" type="string | null">
+      Business website URL
+    </ResponseField>
+    
+    <ResponseField name="address_line_1" type="string" required>
+      First line of business address
+    </ResponseField>
+    
+    <ResponseField name="address_line_2" type="string | null">
+      Second line of business address
+    </ResponseField>
+    
+    <ResponseField name="city" type="string" required>
+      City
+    </ResponseField>
+    
+    <ResponseField name="state_province_region" type="string" required>
+      State, province, or region
+    </ResponseField>
+    
+    <ResponseField name="country" type="string" required>
+      Two-letter ISO country code
+    </ResponseField>
+    
+    <ResponseField name="postal_code" type="string" required>
+      Postal or ZIP code
+    </ResponseField>
+    
+    <ResponseField name="owners" type="array" required>
+      Array of business owners and controllers
+      
+      <Expandable title="Owner Object">
+        <ResponseField name="id" type="string" required>
+          Unique identifier for this owner
+        </ResponseField>
+        
+        <ResponseField name="role" type="string" required>
+          Owner role: `"beneficial_controlling"`, `"beneficial_owner"`, or `"controlling_person"`
+        </ResponseField>
+        
+        <ResponseField name="first_name" type="string" required>
+          Owner's first name
+        </ResponseField>
+        
+        <ResponseField name="last_name" type="string" required>
+          Owner's last name
+        </ResponseField>
+        
+        <ResponseField name="date_of_birth" type="string" required>
+          Date of birth in YYYY-MM-DD format
+        </ResponseField>
+        
+        <ResponseField name="tax_id" type="string" required>
+          Owner's tax ID
+        </ResponseField>
+        
+        <ResponseField name="ownership_percentage" type="number | null">
+          Ownership percentage (0-100)
+        </ResponseField>
+        
+        <ResponseField name="title" type="string | null">
+          Job title or position
+        </ResponseField>
+        
+        <ResponseField name="address_line_1" type="string" required>
+          First line of owner's address
+        </ResponseField>
+        
+        <ResponseField name="address_line_2" type="string | null">
+          Second line of owner's address
+        </ResponseField>
+        
+        <ResponseField name="city" type="string" required>
+          City
+        </ResponseField>
+        
+        <ResponseField name="state_province_region" type="string" required>
+          State, province, or region
+        </ResponseField>
+        
+        <ResponseField name="country" type="string" required>
+          Two-letter ISO country code
+        </ResponseField>
+        
+        <ResponseField name="postal_code" type="string" required>
+          Postal or ZIP code
+        </ResponseField>
+        
+        <ResponseField name="id_doc_type" type="string" required>
+          Type of identification: `"PASSPORT"`, `"ID_CARD"`, or `"DRIVERS"`
+        </ResponseField>
+        
+        <ResponseField name="id_doc_country" type="string" required>
+          Country of ID issuance
+        </ResponseField>
+        
+        <ResponseField name="id_doc_front_file" type="string" required>
+          Front of ID document
+        </ResponseField>
+        
+        <ResponseField name="id_doc_back_file" type="string | null">
+          Back of ID document
+        </ResponseField>
+        
+        <ResponseField name="proof_of_address_doc_type" type="string" required>
+          Type of proof of address
+        </ResponseField>
+        
+        <ResponseField name="proof_of_address_doc_file" type="string | null">
+          Proof of address document
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="incorporation_doc_file" type="string" required>
+      Articles of incorporation or equivalent
+    </ResponseField>
+    
+    <ResponseField name="proof_of_ownership_doc_file" type="string" required>
+      Document proving ownership structure
+    </ResponseField>
+    
+    <ResponseField name="proof_of_address_doc_type" type="string" required>
+      Type of proof of address document
+    </ResponseField>
+    
+    <ResponseField name="proof_of_address_doc_file" type="string" required>
+      Proof of business address
+    </ResponseField>
+    
+    <ResponseField name="external_id" type="string | null">
+      Your internal ID for this business
+    </ResponseField>
+    
+    <ResponseField name="ip_address" type="string | null">
+      IP address from which business registered
+    </ResponseField>
+    
+    <ResponseField name="image_url" type="string | null">
+      URL to business logo or image
+    </ResponseField>
+    
+    <ResponseField name="aiprise_validation_key" type="string" required>
+      Validation key for compliance verification
+    </ResponseField>
+    
+    <ResponseField name="instance_id" type="string" required>
+      Associated instance ID
+    </ResponseField>
+    
+    <ResponseField name="tos_id" type="string | null">
+      ID of accepted terms of service
+    </ResponseField>
+    
+    <ResponseField name="limit" type="object" required>
+      Transaction limits for this receiver
+      
+      <Expandable title="Limit Object">
+        <ResponseField name="per_transaction" type="number" required>
+          Maximum amount per transaction
+        </ResponseField>
+        
+        <ResponseField name="daily" type="number" required>
+          Maximum daily transaction amount
+        </ResponseField>
+        
+        <ResponseField name="monthly" type="number" required>
+          Maximum monthly transaction amount
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string" required>
+      ISO 8601 timestamp of creation
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string" required>
+      ISO 8601 timestamp of last update
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Get Receiver
+
+Retrieve a specific receiver by ID.
+
+```typescript
+const response = await blindpay.receivers.get("rcv_123abc");
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(response.data); // Receiver object
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver to retrieve
+</ParamField>
+
+### Response
+
+Returns a receiver object (individual or business) with the same structure as shown in the List Receivers response.
+
+---
+
+## Update Receiver
+
+Update an existing receiver's information.
+
+```typescript
+const response = await blindpay.receivers.update({
+  receiver_id: "rcv_123abc",
+  email: "newemail@example.com",
+  phone_number: "+1-555-0123",
+  address_line_1: "456 New St",
+  city: "San Francisco",
+  state_province_region: "CA",
+  postal_code: "94103"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("Receiver updated successfully");
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver to update
+</ParamField>
+
+<ParamField body="email" type="string">
+  Updated email address
+</ParamField>
+
+<ParamField body="phone_number" type="string">
+  Updated phone number
+</ParamField>
+
+<ParamField body="address_line_1" type="string">
+  Updated first line of address
+</ParamField>
+
+<ParamField body="address_line_2" type="string">
+  Updated second line of address
+</ParamField>
+
+<ParamField body="city" type="string">
+  Updated city
+</ParamField>
+
+<ParamField body="state_province_region" type="string">
+  Updated state, province, or region
+</ParamField>
+
+<ParamField body="country" type="string">
+  Updated two-letter ISO country code
+</ParamField>
+
+<ParamField body="postal_code" type="string">
+  Updated postal or ZIP code
+</ParamField>
+
+<ParamField body="account_purpose" type="string">
+  Purpose of account. Options: `"charitable_donations"`, `"ecommerce_retail_payments"`, `"investment_purposes"`, `"business_expenses"`, `"payments_to_friends_or_family_abroad"`, `"personal_or_living_expenses"`, `"protect_wealth"`, `"purchase_goods_and_services"`, `"receive_payments_for_goods_and_services"`, `"tax_optimization"`, `"third_party_money_transmission"`, `"payroll"`, `"treasury_management"`, `"other"`
+</ParamField>
+
+<ParamField body="external_id" type="string">
+  Your internal identifier for this receiver
+</ParamField>
+
+<ParamField body="image_url" type="string">
+  URL to profile image or logo
+</ParamField>
+
+<ParamField body="ip_address" type="string">
+  IP address to associate with this receiver
+</ParamField>
+
+<ParamField body="tos_id" type="string">
+  ID of terms of service accepted by receiver
+</ParamField>
+
+#### Individual-specific fields
+
+<ParamField body="first_name" type="string">
+  Updated first name (individuals only)
+</ParamField>
+
+<ParamField body="last_name" type="string">
+  Updated last name (individuals only)
+</ParamField>
+
+<ParamField body="date_of_birth" type="string">
+  Updated date of birth in YYYY-MM-DD format (individuals only)
+</ParamField>
+
+<ParamField body="tax_id" type="string">
+  Updated tax ID (SSN, TIN, etc.)
+</ParamField>
+
+<ParamField body="id_doc_type" type="string">
+  Type of ID: `"PASSPORT"`, `"ID_CARD"`, or `"DRIVERS"`
+</ParamField>
+
+<ParamField body="id_doc_country" type="string">
+  Country code of ID document issuing country
+</ParamField>
+
+<ParamField body="id_doc_front_file" type="string">
+  Updated front of ID document
+</ParamField>
+
+<ParamField body="id_doc_back_file" type="string">
+  Updated back of ID document
+</ParamField>
+
+<ParamField body="proof_of_address_doc_type" type="string">
+  Type of proof of address: `"UTILITY_BILL"`, `"BANK_STATEMENT"`, `"RENTAL_AGREEMENT"`, `"TAX_DOCUMENT"`, or `"GOVERNMENT_CORRESPONDENCE"`
+</ParamField>
+
+<ParamField body="proof_of_address_doc_file" type="string">
+  Updated proof of address document
+</ParamField>
+
+<ParamField body="selfie_file" type="string">
+  Updated selfie photo for verification
+</ParamField>
+
+<ParamField body="purpose_of_transactions" type="string">
+  Purpose of transactions (enhanced KYC only): `"business_transactions"`, `"charitable_donations"`, `"investment_purposes"`, `"payments_to_friends_or_family_abroad"`, `"personal_or_living_expenses"`, `"protect_wealth"`, `"purchase_good_and_services"`, `"receive_payment_for_freelancing"`, `"receive_salary"`, or `"other"`
+</ParamField>
+
+<ParamField body="purpose_of_transactions_explanation" type="string">
+  Explanation if purpose is "other"
+</ParamField>
+
+<ParamField body="source_of_funds_doc_type" type="string">
+  Source of funds type: `"business_income"`, `"gambling_proceeds"`, `"gifts"`, `"government_benefits"`, `"inheritance"`, `"investment_loans"`, `"pension_retirement"`, `"salary"`, `"sale_of_assets_real_estate"`, `"savings"`, `"esops"`, `"investment_proceeds"`, or `"someone_else_funds"`
+</ParamField>
+
+<ParamField body="source_of_funds_doc_file" type="string">
+  Supporting document for source of funds
+</ParamField>
+
+<ParamField body="source_of_wealth" type="string">
+  Source of wealth: `"business_dividends_or_profits"`, `"investments"`, `"asset_sales"`, `"client_investor_contributions"`, `"gambling"`, `"charitable_contributions"`, `"inheritance"`, or `"affiliate_or_royalty_income"`
+</ParamField>
+
+#### Business-specific fields
+
+<ParamField body="legal_name" type="string">
+  Updated legal business name (businesses only)
+</ParamField>
+
+<ParamField body="alternate_name" type="string">
+  DBA or alternate name (businesses only)
+</ParamField>
+
+<ParamField body="formation_date" type="string">
+  Business formation date in YYYY-MM-DD format (businesses only)
+</ParamField>
+
+<ParamField body="website" type="string">
+  Business website URL (businesses only)
+</ParamField>
+
+<ParamField body="business_type" type="string">
+  Type of business: `"corporation"`, `"llc"`, `"partnership"`, `"sole_proprietorship"`, `"trust"`, or `"non_profit"`
+</ParamField>
+
+<ParamField body="business_industry" type="string">
+  NAICS industry code (6-digit code as string)
+</ParamField>
+
+<ParamField body="business_description" type="string">
+  Description of business activities
+</ParamField>
+
+<ParamField body="estimated_annual_revenue" type="string">
+  Estimated annual revenue range: `"0_99999"`, `"100000_999999"`, `"1000000_9999999"`, `"10000000_49999999"`, `"50000000_249999999"`, or `"2500000000_plus"`
+</ParamField>
+
+<ParamField body="publicly_traded" type="boolean">
+  Whether the business is publicly traded
+</ParamField>
+
+<ParamField body="owners" type="array">
+  Array of owner objects (without `id` field for updates)
+  
+  <Expandable title="Owner Object">
+    <ParamField body="role" type="string" required>
+      Owner role: `"beneficial_controlling"`, `"beneficial_owner"`, or `"controlling_person"`
+    </ParamField>
+    
+    <ParamField body="first_name" type="string" required>
+      Owner's first name
+    </ParamField>
+    
+    <ParamField body="last_name" type="string" required>
+      Owner's last name
+    </ParamField>
+    
+    <ParamField body="date_of_birth" type="string" required>
+      Date of birth in YYYY-MM-DD format
+    </ParamField>
+    
+    <ParamField body="tax_id" type="string" required>
+      Owner's tax ID
+    </ParamField>
+    
+    <ParamField body="ownership_percentage" type="number">
+      Ownership percentage (0-100)
+    </ParamField>
+    
+    <ParamField body="title" type="string">
+      Job title or position
+    </ParamField>
+    
+    <ParamField body="address_line_1" type="string" required>
+      First line of address
+    </ParamField>
+    
+    <ParamField body="address_line_2" type="string">
+      Second line of address
+    </ParamField>
+    
+    <ParamField body="city" type="string" required>
+      City
+    </ParamField>
+    
+    <ParamField body="state_province_region" type="string" required>
+      State, province, or region
+    </ParamField>
+    
+    <ParamField body="country" type="string" required>
+      Two-letter ISO country code
+    </ParamField>
+    
+    <ParamField body="postal_code" type="string" required>
+      Postal or ZIP code
+    </ParamField>
+    
+    <ParamField body="id_doc_type" type="string" required>
+      Type of ID: `"PASSPORT"`, `"ID_CARD"`, or `"DRIVERS"`
+    </ParamField>
+    
+    <ParamField body="id_doc_country" type="string" required>
+      Country of ID issuance
+    </ParamField>
+    
+    <ParamField body="id_doc_front_file" type="string" required>
+      Front of ID document
+    </ParamField>
+    
+    <ParamField body="id_doc_back_file" type="string">
+      Back of ID document
+    </ParamField>
+    
+    <ParamField body="proof_of_address_doc_type" type="string" required>
+      Type of proof of address
+    </ParamField>
+    
+    <ParamField body="proof_of_address_doc_file" type="string">
+      Proof of address document
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="incorporation_doc_file" type="string">
+  Updated incorporation documents (businesses only)
+</ParamField>
+
+<ParamField body="proof_of_ownership_doc_file" type="string">
+  Updated proof of ownership document (businesses only)
+</ParamField>
+
+### Response
+
+Returns an empty success response if the update was successful.
+
+---
+
+## Delete Receiver
+
+Delete a receiver. This action cannot be undone.
+
+```typescript
+const response = await blindpay.receivers.delete("rcv_123abc");
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("Receiver deleted successfully");
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver to delete
+</ParamField>
+
+### Response
+
+Returns an empty success response if the deletion was successful.
+
+---
+
+## Get Receiver Limits
+
+Retrieve the current transaction limits for a receiver.
+
+```typescript
+const response = await blindpay.receivers.getLimits("rcv_123abc");
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(response.data.limits);
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+### Response
+
+<ResponseField name="limits" type="object" required>
+  Transaction limits for the receiver
+  
+  <Expandable title="Limits Object">
+    <ResponseField name="payin" type="object" required>
+      Limits for receiving funds
+      
+      <Expandable title="Payin Limits">
+        <ResponseField name="daily" type="number" required>
+          Maximum daily amount for incoming transactions
+        </ResponseField>
+        
+        <ResponseField name="monthly" type="number" required>
+          Maximum monthly amount for incoming transactions
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    
+    <ResponseField name="payout" type="object" required>
+      Limits for sending funds
+      
+      <Expandable title="Payout Limits">
+        <ResponseField name="daily" type="number" required>
+          Maximum daily amount for outgoing transactions
+        </ResponseField>
+        
+        <ResponseField name="monthly" type="number" required>
+          Maximum monthly amount for outgoing transactions
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Get Limit Increase Requests
+
+Retrieve all limit increase requests for a receiver.
+
+```typescript
+const response = await blindpay.receivers.getLimitIncreaseRequests("rcv_123abc");
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log(response.data); // Array of limit increase requests
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+### Response
+
+<ResponseField name="data" type="array" required>
+  Array of limit increase request objects
+  
+  <Expandable title="Limit Increase Request">
+    <ResponseField name="id" type="string" required>
+      Unique identifier for the limit increase request
+    </ResponseField>
+    
+    <ResponseField name="receiver_id" type="string" required>
+      ID of the receiver requesting the increase
+    </ResponseField>
+    
+    <ResponseField name="status" type="string" required>
+      Request status: `"in_review"`, `"approved"`, or `"rejected"`
+    </ResponseField>
+    
+    <ResponseField name="per_transaction" type="number" required>
+      Requested per-transaction limit
+    </ResponseField>
+    
+    <ResponseField name="daily" type="number" required>
+      Requested daily limit
+    </ResponseField>
+    
+    <ResponseField name="monthly" type="number" required>
+      Requested monthly limit
+    </ResponseField>
+    
+    <ResponseField name="supporting_document_type" type="string" required>
+      Type of supporting document: `"individual_bank_statement"`, `"individual_tax_return"`, `"individual_proof_of_income"`, `"business_bank_statement"`, `"business_financial_statements"`, or `"business_tax_return"`
+    </ResponseField>
+    
+    <ResponseField name="supporting_document_file" type="string" required>
+      URL or file ID of supporting document
+    </ResponseField>
+    
+    <ResponseField name="created_at" type="string" required>
+      ISO 8601 timestamp of request creation
+    </ResponseField>
+    
+    <ResponseField name="updated_at" type="string" required>
+      ISO 8601 timestamp of last update
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Request Limit Increase
+
+Submit a request to increase a receiver's transaction limits.
+
+```typescript
+const response = await blindpay.receivers.requestLimitIncrease({
+  receiver_id: "rcv_123abc",
+  per_transaction: 100000,
+  daily: 500000,
+  monthly: 2000000,
+  supporting_document_type: "business_bank_statement",
+  supporting_document_file: "file_456def"
+});
+
+if (response.error) {
+  console.error(response.error.message);
+} else {
+  console.log("Limit increase requested:", response.data.id);
+}
+```
+
+### Parameters
+
+<ParamField path="receiver_id" type="string" required>
+  The unique identifier of the receiver
+</ParamField>
+
+<ParamField body="per_transaction" type="number" required>
+  Requested maximum amount per transaction
+</ParamField>
+
+<ParamField body="daily" type="number" required>
+  Requested maximum daily transaction amount
+</ParamField>
+
+<ParamField body="monthly" type="number" required>
+  Requested maximum monthly transaction amount
+</ParamField>
+
+<ParamField body="supporting_document_type" type="string" required>
+  Type of supporting document being provided:
+  - `"individual_bank_statement"` - Individual's bank statement
+  - `"individual_tax_return"` - Individual's tax return
+  - `"individual_proof_of_income"` - Individual's proof of income
+  - `"business_bank_statement"` - Business bank statement
+  - `"business_financial_statements"` - Business financial statements
+  - `"business_tax_return"` - Business tax return
+</ParamField>
+
+<ParamField body="supporting_document_file" type="string" required>
+  File ID or URL of the supporting document that justifies the limit increase
+</ParamField>
+
+### Response
+
+<ResponseField name="id" type="string" required>
+  Unique identifier for the created limit increase request
+</ResponseField>

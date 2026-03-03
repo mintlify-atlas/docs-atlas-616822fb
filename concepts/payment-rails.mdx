@@ -1,0 +1,451 @@
+---
+title: Payment Rails
+description: Understanding payment rails and how BlindPay routes funds to different countries and payment methods
+---
+
+## What are Payment Rails?
+
+Payment rails are the underlying infrastructure that moves money from one place to another. BlindPay supports multiple payment rails to enable fast, cost-effective transfers to receivers around the world. Each rail has different characteristics in terms of speed, cost, geographic coverage, and settlement times.
+
+When you create a bank account for a receiver, you specify which payment rail to use. BlindPay then routes transactions through that rail to deliver funds to the receiver's account.
+
+## Available Payment Rails
+
+BlindPay supports the following payment rails:
+
+### PIX (Brazil)
+
+Brazil's instant payment system, enabling 24/7 real-time transfers.
+
+**Key Features:**
+- Instant settlement (typically under 10 seconds)
+- Available 24/7, including weekends and holidays
+- Low fees
+- Uses PIX keys (email, phone, tax ID, or random key)
+
+**Best For:**
+- Brazilian receivers requiring immediate access to funds
+- High-frequency, time-sensitive payments
+- Consumer-facing applications
+
+```typescript
+// Create a PIX bank account for a receiver
+const { data, error } = await blindpay.receivers.bankAccounts.createPix({
+  receiver_id: "re_abc123",
+  name: "Primary PIX Account",
+  pix_key: "user@example.com" // Can be email, phone, tax ID, or random key
+});
+
+if (data) {
+  console.log("PIX account created:", data.id);
+  console.log("PIX key:", data.pix_key);
+}
+```
+
+**PIX Key Types:**
+- Email address (e.g., `user@example.com`)
+- Phone number (e.g., `+5511987654321`)
+- Tax ID/CPF (e.g., `12345678900`)
+- Random key (UUID format)
+
+### ACH (United States)
+
+Automated Clearing House network for US domestic transfers.
+
+**Key Features:**
+- 1-2 business day settlement
+- Very low fees
+- High reliability
+- Supports checking and savings accounts
+
+**Best For:**
+- US payroll and supplier payments
+- High-volume, low-value transactions
+- Cost-sensitive applications
+
+```typescript
+// Create an ACH bank account for a US receiver
+const { data, error } = await blindpay.receivers.bankAccounts.createAch({
+  receiver_id: "re_abc123",
+  name: "Business Checking",
+  account_class: "business", // or "individual"
+  account_type: "checking", // or "saving"
+  account_number: "123456789",
+  routing_number: "021000021",
+  beneficiary_name: "Acme Corp"
+});
+```
+
+**Account Requirements:**
+- 9-digit routing number (RTN)
+- Account number
+- Account type (checking or savings)
+- Account class (individual or business)
+
+### Wire Transfer (United States)
+
+Domestic wire transfers for same-day US payments.
+
+**Key Features:**
+- Same-day settlement (if submitted before cutoff time)
+- Higher fees than ACH
+- Immediate availability of funds
+- Irrevocable once sent
+
+**Best For:**
+- Urgent, high-value payments
+- Real estate transactions
+- Time-critical business payments
+
+```typescript
+// Create a wire bank account for a US receiver
+const { data, error } = await blindpay.receivers.bankAccounts.createWire({
+  receiver_id: "re_abc123",
+  name: "Wire Account",
+  account_number: "123456789",
+  routing_number: "021000021",
+  beneficiary_name: "John Doe",
+  address_line_1: "123 Main Street",
+  city: "New York",
+  state_province_region: "NY",
+  country: "US",
+  postal_code: "10001"
+});
+```
+
+### RTP (United States)
+
+Real-Time Payments network for instant US transfers.
+
+**Key Features:**
+- Instant settlement (seconds)
+- Available 24/7/365
+- Irrevocable transactions
+- Growing bank support
+
+**Best For:**
+- Instant disbursements
+- Just-in-time payments
+- Time-sensitive transactions
+
+```typescript
+// Create an RTP bank account for a US receiver
+const { data, error } = await blindpay.receivers.bankAccounts.createRtp({
+  receiver_id: "re_abc123",
+  name: "RTP Account",
+  account_number: "123456789",
+  routing_number: "021000021",
+  beneficiary_name: "Jane Smith",
+  address_line_1: "456 Oak Avenue",
+  city: "Los Angeles",
+  state_province_region: "CA",
+  country: "US",
+  postal_code: "90001"
+});
+```
+
+### SPEI (Mexico)
+
+Mexico's electronic payment system for peso transfers.
+
+**Key Features:**
+- Near-instant settlement (minutes)
+- Available 24/7
+- Low fees
+- Requires CLABE number
+
+**Best For:**
+- Mexican payroll and supplier payments
+- Cross-border remittances to Mexico
+- E-commerce payments
+
+```typescript
+// Create a SPEI bank account for a Mexican receiver
+const { data, error } = await blindpay.receivers.bankAccounts.createSpei({
+  receiver_id: "re_abc123",
+  name: "SPEI Account",
+  beneficiary_name: "Juan García",
+  spei_clabe: "012345678901234567", // 18-digit CLABE
+  spei_institution_code: "012",
+  spei_protocol: "clabe" // or "debitcard" or "phonenum"
+});
+```
+
+**SPEI Protocols:**
+- `clabe` - 18-digit standardized bank account number
+- `debitcard` - Debit card number
+- `phonenum` - Phone number linked to account
+
+### ACH Colombia
+
+Colombia's ACH network for peso transfers.
+
+**Key Features:**
+- 1-2 business day settlement
+- Supports both checking and savings accounts
+- Requires Colombian tax ID
+- Email notification to beneficiary
+
+**Best For:**
+- Colombian payroll and supplier payments
+- Business-to-business payments
+- Recurring payments
+
+```typescript
+// Create an ACH Colombia bank account
+const { data, error } = await blindpay.receivers.bankAccounts.createColombiaAch({
+  receiver_id: "re_abc123",
+  name: "Colombia Savings",
+  account_type: "saving",
+  ach_cop_beneficiary_first_name: "Carlos",
+  ach_cop_beneficiary_last_name: "Rodríguez",
+  ach_cop_document_id: "1234567890",
+  ach_cop_document_type: "CC", // CC, CE, NIT, PASS, or PEP
+  ach_cop_email: "carlos@example.com",
+  ach_cop_bank_code: "001",
+  ach_cop_bank_account: "12345678"
+});
+```
+
+**Document Types:**
+- `CC` - Cédula de Ciudadanía (Citizenship Card)
+- `CE` - Cédula de Extranjería (Foreigner ID)
+- `NIT` - Tax ID for businesses
+- `PASS` - Passport
+- `PEP` - Special permit
+
+### Transfers (Argentina)
+
+Argentina's instant transfer system for peso payments.
+
+**Key Features:**
+- Instant settlement
+- Supports CVU, CBU, and ALIAS
+- Available 24/7
+- Low fees
+
+**Best For:**
+- Argentine payroll and gig economy payments
+- Instant disbursements
+- Consumer payments
+
+```typescript
+// Create an Argentina Transfers bank account
+const { data, error } = await blindpay.receivers.bankAccounts.createArgentinaTransfers({
+  receiver_id: "re_abc123",
+  name: "CVU Account",
+  beneficiary_name: "María López",
+  transfers_account: "0000003100001234567890",
+  transfers_type: "CVU" // or "CBU" or "ALIAS"
+});
+```
+
+**Account Types:**
+- `CVU` - Virtual Uniform Key (22 digits, for digital wallets)
+- `CBU` - Uniform Bank Key (22 digits, for bank accounts)
+- `ALIAS` - Custom alias (friendly name like "maria.pago")
+
+### International SWIFT
+
+Global wire transfer network for cross-border payments.
+
+**Key Features:**
+- Global coverage (200+ countries)
+- 2-5 business day settlement
+- Higher fees (including intermediary bank fees)
+- Requires extensive beneficiary details
+
+**Best For:**
+- International payments outside supported regions
+- Large cross-border transactions
+- Business payments to unsupported countries
+
+```typescript
+// Create an international SWIFT bank account
+const { data, error } = await blindpay.receivers.bankAccounts.createInternationalSwift({
+  receiver_id: "re_abc123",
+  name: "SWIFT Account",
+  swift_account_holder_name: "John Smith",
+  swift_account_number_iban: "GB82WEST12345698765432",
+  swift_code_bic: "BUKBGB22",
+  
+  // Beneficiary address
+  swift_beneficiary_address_line_1: "123 High Street",
+  swift_beneficiary_city: "London",
+  swift_beneficiary_country: "GB",
+  swift_beneficiary_state_province_region: "England",
+  swift_beneficiary_postal_code: "SW1A 1AA",
+  
+  // Bank details
+  swift_bank_name: "Barclays Bank PLC",
+  swift_bank_address_line_1: "1 Churchill Place",
+  swift_bank_city: "London",
+  swift_bank_country: "GB",
+  swift_bank_state_province_region: "England",
+  swift_bank_postal_code: "E14 5HP",
+  
+  // Optional intermediary bank (for certain countries/currencies)
+  swift_intermediary_bank_swift_code_bic: "CHASUS33",
+  swift_intermediary_bank_account_number_iban: "1234567890",
+  swift_intermediary_bank_name: "JPMorgan Chase Bank",
+  swift_intermediary_bank_country: "US"
+});
+```
+
+<Warning>
+SWIFT transfers may incur additional fees from intermediary banks. Always inform receivers about potential deductions from the sent amount.
+</Warning>
+
+## Choosing the Right Payment Rail
+
+When selecting a payment rail, consider:
+
+### Speed Requirements
+
+- **Instant (seconds to minutes)**: PIX, RTP, SPEI, Transfers
+- **Same-day**: Wire Transfer
+- **1-2 business days**: ACH, ACH Colombia
+- **2-5 business days**: International SWIFT
+
+### Cost Considerations
+
+- **Lowest cost**: ACH, PIX, SPEI, Transfers, ACH Colombia
+- **Moderate cost**: RTP, Wire Transfer
+- **Highest cost**: International SWIFT (includes intermediary fees)
+
+### Geographic Coverage
+
+```typescript
+// Example: Route to the appropriate rail based on receiver country
+const createBankAccountForCountry = async (receiverId: string, country: string) => {
+  switch (country) {
+    case "BR":
+      return await blindpay.receivers.bankAccounts.createPix({
+        receiver_id: receiverId,
+        name: "Primary Account",
+        pix_key: "user@example.com"
+      });
+    
+    case "US":
+      return await blindpay.receivers.bankAccounts.createAch({
+        receiver_id: receiverId,
+        name: "Primary Account",
+        account_class: "individual",
+        account_type: "checking",
+        account_number: "123456789",
+        routing_number: "021000021",
+        beneficiary_name: "John Doe"
+      });
+    
+    case "MX":
+      return await blindpay.receivers.bankAccounts.createSpei({
+        receiver_id: receiverId,
+        name: "Primary Account",
+        beneficiary_name: "Juan García",
+        spei_clabe: "012345678901234567",
+        spei_institution_code: "012",
+        spei_protocol: "clabe"
+      });
+    
+    case "CO":
+      return await blindpay.receivers.bankAccounts.createColombiaAch({
+        receiver_id: receiverId,
+        name: "Primary Account",
+        account_type: "saving",
+        ach_cop_beneficiary_first_name: "Carlos",
+        ach_cop_beneficiary_last_name: "Rodríguez",
+        ach_cop_document_id: "1234567890",
+        ach_cop_document_type: "CC",
+        ach_cop_email: "carlos@example.com",
+        ach_cop_bank_code: "001",
+        ach_cop_bank_account: "12345678"
+      });
+    
+    case "AR":
+      return await blindpay.receivers.bankAccounts.createArgentinaTransfers({
+        receiver_id: receiverId,
+        name: "Primary Account",
+        beneficiary_name: "María López",
+        transfers_account: "0000003100001234567890",
+        transfers_type: "CVU"
+      });
+    
+    default:
+      return await blindpay.receivers.bankAccounts.createInternationalSwift({
+        receiver_id: receiverId,
+        name: "Primary Account",
+        swift_account_holder_name: "Receiver Name",
+        swift_account_number_iban: "IBAN123",
+        swift_code_bic: "BANKCODE",
+        // ... additional required fields
+      });
+  }
+};
+```
+
+### Operating Hours
+
+- **24/7 availability**: PIX, RTP, SPEI, Transfers
+- **Business hours only**: ACH, Wire Transfer, ACH Colombia
+- **Depends on banks**: International SWIFT
+
+## Managing Bank Accounts
+
+### Listing Bank Accounts
+
+```typescript
+const { data, error } = await blindpay.receivers.bankAccounts.list("re_abc123");
+
+if (data) {
+  data.data.forEach(account => {
+    console.log(`${account.name} (${account.type}):`, account.id);
+  });
+}
+```
+
+### Getting Bank Account Details
+
+```typescript
+const { data, error } = await blindpay.receivers.bankAccounts.get({
+  receiver_id: "re_abc123",
+  id: "ba_xyz789"
+});
+
+if (data) {
+  console.log("Account type:", data.type);
+  console.log("Account name:", data.name);
+}
+```
+
+### Deleting a Bank Account
+
+```typescript
+const { data, error } = await blindpay.receivers.bankAccounts.delete({
+  receiver_id: "re_abc123",
+  id: "ba_xyz789"
+});
+
+if (!error) {
+  console.log("Bank account deleted successfully");
+}
+```
+
+<Note>
+Receivers can have multiple bank accounts across different payment rails. This allows you to choose the optimal rail for each transaction based on speed, cost, and other requirements.
+</Note>
+
+## Best Practices
+
+1. **Default to the local instant rail**: For supported countries (Brazil, Mexico, Argentina, Colombia), use the local instant payment system (PIX, SPEI, Transfers) for the best user experience.
+
+2. **Use ACH for US payments when speed isn't critical**: ACH is significantly cheaper than wire transfers for non-urgent US payments.
+
+3. **Validate account details before submission**: Incorrect routing numbers, CLABE codes, or account numbers will cause payment failures and delays.
+
+4. **Consider time zones**: When using business-hours-only rails like ACH or Wire, account for cutoff times and time zone differences.
+
+5. **Inform receivers about settlement times**: Set proper expectations about when funds will be available in their account.
+
+6. **Monitor for rail-specific errors**: Different rails have different validation rules and error conditions. Handle these appropriately in your application.
+
+7. **Use SWIFT as a fallback**: For countries without direct support, International SWIFT provides global coverage, though at higher cost and slower speed.

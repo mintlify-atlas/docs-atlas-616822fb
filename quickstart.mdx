@@ -1,80 +1,225 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get up and running with BlindPay Node.js SDK in minutes
 ---
 
-## Get started in three steps
+Get started with BlindPay Node.js SDK and make your first API call in under 5 minutes.
 
-Get your documentation site running locally and make your first customization.
+<Steps>
+  <Step title="Install the SDK">
+    Install the BlindPay Node.js SDK using your preferred package manager:
 
-### Step 1: Set up your local environment
+    <CodeGroup>
+    ```bash npm
+    npm install @blindpay/node
+    ```
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash yarn
+    yarn add @blindpay/node
+    ```
 
-### Step 2: Deploy your changes
+    ```bash pnpm
+    pnpm add @blindpay/node
+    ```
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash bun
+    bun add @blindpay/node
+    ```
+    </CodeGroup>
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Get your credentials">
+    You'll need an API key and instance ID from the BlindPay dashboard:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    1. Sign up or log in at [app.blindpay.com](https://app.blindpay.com)
+    2. Navigate to your instance's API Keys page
+    3. Create a new API key
+    4. Copy your API key and instance ID
 
-### Step 3: Go live
+    <Warning>
+      Keep your API key secure and never commit it to version control. Use environment variables in production.
+    </Warning>
+  </Step>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+  <Step title="Initialize the client">
+    Create a new BlindPay client with your credentials:
+
+    ```typescript
+    import { BlindPay } from '@blindpay/node';
+
+    const blindpay = new BlindPay({
+      apiKey: 'your-api-key-here',
+      instanceId: 'your-instance-id-here'
+    });
+    ```
+
+    <Tip>
+      All API calls will use these credentials automatically. You don't need to pass them again.
+    </Tip>
+  </Step>
+
+  <Step title="Make your first API call">
+    Let's fetch the available payment rails to verify everything works:
+
+    ```typescript
+    async function getAvailableRails() {
+      const { data, error } = await blindpay.available.getRails();
+      
+      if (error) {
+        console.error('Error:', error.message);
+        return;
+      }
+      
+      console.log('Available payment rails:', data);
+    }
+
+    getAvailableRails();
+    ```
+
+    **Expected response:**
+    ```json
+    {
+      "data": [
+        {
+          "label": "PIX (Brazil)",
+          "value": "pix",
+          "country": "BR"
+        },
+        {
+          "label": "ACH",
+          "value": "ach",
+          "country": "US"
+        },
+        {
+          "label": "Wire Transfer",
+          "value": "wire",
+          "country": "US"
+        }
+        // ... more rails
+      ],
+      "error": null
+    }
+    ```
+  </Step>
+</Steps>
+
+## Understanding the response format
+
+All BlindPay SDK methods return a consistent response format with a discriminated union:
+
+```typescript
+type BlindpayApiResponse<T> = 
+  | { data: T; error: null }
+  | { data: null; error: { message: string } };
+```
+
+This pattern makes error handling straightforward and type-safe:
+
+```typescript
+const { data, error } = await blindpay.receivers.list();
+
+if (error) {
+  // TypeScript knows `data` is null here
+  console.error('Error:', error.message);
+  return;
+}
+
+// TypeScript knows `error` is null here
+console.log('Receivers:', data); // data is fully typed
+```
+
+## Complete example
+
+Here's a complete example that creates a receiver and lists all receivers:
+
+```typescript
+import { BlindPay } from '@blindpay/node';
+
+const blindpay = new BlindPay({
+  apiKey: process.env.BLINDPAY_API_KEY!,
+  instanceId: process.env.BLINDPAY_INSTANCE_ID!
+});
+
+async function main() {
+  // Create a receiver with standard KYC
+  const { data: receiver, error: createError } = 
+    await blindpay.receivers.createIndividualWithStandardKYC({
+      country: 'US',
+      email: 'john.doe@example.com',
+      first_name: 'John',
+      last_name: 'Doe'
+    });
+
+  if (createError) {
+    console.error('Failed to create receiver:', createError.message);
+    return;
+  }
+
+  console.log('Created receiver:', receiver);
+
+  // List all receivers
+  const { data: receivers, error: listError } = 
+    await blindpay.receivers.list();
+
+  if (listError) {
+    console.error('Failed to list receivers:', listError.message);
+    return;
+  }
+
+  console.log(`Total receivers: ${receivers.length}`);
+}
+
+main();
+```
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Core Concepts" icon="book" href="/concepts/receivers">
+    Learn about receivers, payment rails, and quotes
+  </Card>
+  <Card title="Create a payout" icon="money-bill-transfer" href="/guides/payouts">
+    Send crypto-to-fiat payments globally
+  </Card>
+  <Card title="Create a payin" icon="coins" href="/guides/payins">
+    Accept fiat-to-crypto payments
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/client">
+    Explore the complete API documentation
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Common issues
+
+<AccordionGroup>
+  <Accordion title="Missing API key or instance ID">
+    **Error:** `BlindPayError: Api key not provided, get your api key on blindpay dashboard`
+
+    Make sure you're passing both `apiKey` and `instanceId` to the BlindPay constructor:
+
+    ```typescript
+    const blindpay = new BlindPay({
+      apiKey: 'your-api-key',      // Required
+      instanceId: 'your-instance-id' // Required
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="TypeScript errors">
+    **Error:** `Cannot find module '@blindpay/node'`
+
+    Make sure TypeScript can find the types:
+    1. Check that `@blindpay/node` is in your `package.json` dependencies
+    2. Run `npm install` to ensure dependencies are installed
+    3. Check your `tsconfig.json` has `"moduleResolution": "node"` or `"bundler"`
+  </Accordion>
+
+  <Accordion title="401 Unauthorized errors">
+    **Error:** API returns unauthorized error
+
+    This means your API key is invalid or expired:
+    1. Verify your API key in the BlindPay dashboard
+    2. Check that you're using the correct instance ID
+    3. Generate a new API key if needed
+  </Accordion>
+</AccordionGroup>
