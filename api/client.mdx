@@ -180,10 +180,14 @@ const { data, error } = await blindpay.instances.webhookEndpoints.create({
 
 #### instances.tos
 
-Manage terms of service acceptance.
+Initiate terms of service acceptance flow for receivers.
 
 ```typescript
-const { data, error } = await blindpay.instances.tos.accept();
+const { data, error } = await blindpay.instances.tos.initiate({
+  idempotency_key: 'unique_key_123',
+  receiver_id: 'rcv_123',
+  redirect_url: 'https://example.com/tos-complete'
+});
 ```
 
 **Type:** `ReturnType<typeof createTermsOfServiceResource>`

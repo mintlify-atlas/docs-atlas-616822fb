@@ -8,7 +8,7 @@ description: "Manage offramp wallets for converting crypto to fiat"
 Retrieve all offramp wallets for a specific bank account.
 
 ```typescript
-const response = await blindpay.offrampWallets.list({
+const response = await blindpay.wallets.offramp.list({
   receiver_id: "rcv_123",
   bank_account_id: "bank_123"
 });
@@ -69,7 +69,7 @@ const response = await blindpay.offrampWallets.list({
 Create a new offramp wallet linked to a bank account.
 
 ```typescript
-const response = await blindpay.offrampWallets.create({
+const response = await blindpay.wallets.offramp.create({
   receiver_id: "rcv_123",
   bank_account_id: "bank_123",
   external_id: "ext_wallet_123",
@@ -118,7 +118,7 @@ const response = await blindpay.offrampWallets.create({
 Retrieve a specific offramp wallet by ID.
 
 ```typescript
-const response = await blindpay.offrampWallets.get({
+const response = await blindpay.wallets.offramp.get({
   receiver_id: "rcv_123",
   bank_account_id: "bank_123",
   id: "offramp_wallet_123"
