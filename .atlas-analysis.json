@@ -1,0 +1,179 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "BlindPay Node.js SDK",
+  "projectDescription": "Official Node.js SDK for BlindPay - Stablecoin API for global payments",
+  "theme": "palm",
+  "primaryColor": "#3B82F6",
+  "lightColor": "#60A5FA",
+  "darkColor": "#2563EB",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "installation",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/receivers",
+              "concepts/payment-rails",
+              "concepts/quotes",
+              "concepts/error-handling",
+              "concepts/webhooks"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/payins",
+              "guides/payouts",
+              "guides/virtual-accounts",
+              "guides/blockchain-wallets",
+              "guides/webhook-verification"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Client",
+            "pages": [
+              "api/client"
+            ]
+          },
+          {
+            "group": "Receivers",
+            "pages": [
+              "api/receivers/overview",
+              "api/receivers/individuals",
+              "api/receivers/businesses",
+              "api/receivers/bank-accounts"
+            ]
+          },
+          {
+            "group": "Payments",
+            "pages": [
+              "api/payins/overview",
+              "api/payins/quotes",
+              "api/payouts/overview",
+              "api/quotes"
+            ]
+          },
+          {
+            "group": "Wallets & Accounts",
+            "pages": [
+              "api/blockchain-wallets",
+              "api/offramp-wallets",
+              "api/virtual-accounts"
+            ]
+          },
+          {
+            "group": "Instance Management",
+            "pages": [
+              "api/instances",
+              "api/api-keys",
+              "api/webhooks",
+              "api/partner-fees"
+            ]
+          },
+          {
+            "group": "Utilities",
+            "pages": [
+              "api/available"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Multi-blockchain stablecoin payments (Stellar, EVM chains, Solana)",
+    "Global payment rails (PIX, ACH, Wire, SPEI, SWIFT, etc.)",
+    "KYC/KYB receiver management with document verification",
+    "Real-time quotes and FX rates",
+    "Virtual accounts for fiat on-ramp",
+    "Webhook event notifications with signature verification",
+    "TypeScript-first with full type safety",
+    "Consistent error handling pattern"
+  ],
+  "publicApiSurface": [
+    "BlindPay (main client class)",
+    "available.getRails()",
+    "available.getBankDetails()",
+    "available.getSwiftCodeBankDetails()",
+    "receivers.list()",
+    "receivers.createIndividualWithStandardKYC()",
+    "receivers.createIndividualWithEnhancedKYC()",
+    "receivers.createBusinessWithStandardKYB()",
+    "receivers.get()",
+    "receivers.update()",
+    "receivers.delete()",
+    "receivers.getLimits()",
+    "receivers.getLimitIncreaseRequests()",
+    "receivers.requestLimitIncrease()",
+    "receivers.bankAccounts.list()",
+    "receivers.bankAccounts.create()",
+    "receivers.bankAccounts.get()",
+    "receivers.bankAccounts.delete()",
+    "payins.list()",
+    "payins.get()",
+    "payins.getTrack()",
+    "payins.createEvm()",
+    "payins.quotes.create()",
+    "payouts.list()",
+    "payouts.get()",
+    "payouts.getTrack()",
+    "payouts.authorizeStellarToken()",
+    "payouts.createStellar()",
+    "payouts.createEvm()",
+    "payouts.createSolana()",
+    "quotes.create()",
+    "quotes.getFxRate()",
+    "virtualAccounts.list()",
+    "virtualAccounts.get()",
+    "virtualAccounts.create()",
+    "virtualAccounts.update()",
+    "wallets.blockchain.list()",
+    "wallets.blockchain.createWithAddress()",
+    "wallets.blockchain.createWithHash()",
+    "wallets.blockchain.get()",
+    "wallets.blockchain.delete()",
+    "wallets.blockchain.getWalletMessage()",
+    "wallets.blockchain.createAssetTrustline()",
+    "wallets.blockchain.mintUsdbStellar()",
+    "wallets.blockchain.mintUsdbSolana()",
+    "wallets.blockchain.prepareSolanaDelegationTransaction()",
+    "wallets.offramp.list()",
+    "wallets.offramp.create()",
+    "wallets.offramp.get()",
+    "wallets.offramp.delete()",
+    "instances.get()",
+    "instances.update()",
+    "instances.apiKeys.list()",
+    "instances.apiKeys.create()",
+    "instances.apiKeys.delete()",
+    "instances.webhookEndpoints.list()",
+    "instances.webhookEndpoints.create()",
+    "instances.webhookEndpoints.delete()",
+    "instances.webhookEndpoints.getSecret()",
+    "instances.webhookEndpoints.getPortalAccessUrl()",
+    "instances.tos.get()",
+    "instances.tos.accept()",
+    "partnerFees.list()",
+    "partnerFees.create()",
+    "partnerFees.get()",
+    "partnerFees.update()",
+    "partnerFees.delete()",
+    "verifyWebhookSignature()"
+  ]
+}
